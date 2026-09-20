@@ -868,6 +868,14 @@
       transition: opacity 0.2s, transform 0.2s;
     }
     .form-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+    /* Honeypot: off-screen rather than display:none, which some bots skip. */
+    .hp-field {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
     .form-note {
       margin-top: 1.4rem;
       font-size: 0.75rem;
@@ -1717,6 +1725,10 @@
           <label for="f-msg">Your message</label>
           <textarea id="f-msg" placeholder="Tell me what you'd like to know..."></textarea>
         </div>
+        <div class="hp-field" aria-hidden="true">
+          <label for="f-website">Website</label>
+          <input type="text" id="f-website" tabindex="-1" autocomplete="off" />
+        </div>
         <button type="submit" class="form-submit">Send Enquiry</button>
         <p class="form-note">I'll reply within 48 hours. Follow @fireandfaye for new drops.</p>
       </form>
@@ -2172,19 +2184,68 @@
     }
     */
 
-    // ── Form handler ─────────────────────────────
-    function handleSubmit(e) {
+    // ── Enquiry form ─────────────────────────────
+    const ENQUIRY_ENDPOINT = 'https://fireandfaye-yoco-backend.vercel.app/api/enquiry';
+
+    async function handleSubmit(e) {
       e.preventDefault();
-      const btn = e.target.querySelector('.form-submit');
-      btn.textContent = 'Message sent ✦';
-      btn.style.background = 'var(--sage-deep)';
-      btn.style.color = 'var(--white)';
-      setTimeout(() => {
-        btn.textContent = 'Send Enquiry';
+      const form = e.target;
+      const btn = form.querySelector('.form-submit');
+      const note = form.querySelector('.form-note');
+      const original = 'Send Enquiry';
+
+      const name = document.getElementById('f-name').value.trim();
+      const email = document.getElementById('f-email').value.trim();
+      const message = document.getElementById('f-msg').value.trim();
+      const website = document.getElementById('f-website').value.trim();
+
+      const fail = (msg) => {
+        btn.textContent = original;
+        btn.disabled = false;
         btn.style.background = 'var(--gold)';
         btn.style.color = 'var(--espresso)';
-        e.target.reset();
-      }, 3500);
+        note.textContent = msg;
+        note.style.color = 'var(--gold-deep)';
+      };
+
+      if (!name) return fail('Please enter your name.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Please enter a valid email address.');
+      if (message.length < 5) return fail('Please enter a message.');
+
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      note.textContent = '';
+
+      try {
+        const res = await fetch(ENQUIRY_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, message, website }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) return fail(data.error || 'We could not send that. Please try again.');
+
+        // Only now is it safe to say the message was sent.
+        btn.textContent = 'Message sent ✦';
+        btn.style.background = 'var(--sage-deep)';
+        btn.style.color = 'var(--white)';
+        note.textContent = "Thank you — I'll reply within 48 hours.";
+        note.style.color = 'var(--sage-deep)';
+        form.reset();
+
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.disabled = false;
+          btn.style.background = 'var(--gold)';
+          btn.style.color = 'var(--espresso)';
+          note.textContent = "I'll reply within 48 hours. Follow @fireandfaye for new drops.";
+          note.style.color = '';
+        }, 6000);
+      } catch (err) {
+        console.error('Enquiry failed:', err);
+        fail('We could not reach the server. Please check your connection, or email us directly.');
+      }
     }
     // ── Cart ──────────────────────────────────────
     // Prices shown here are for display only. The real total is recalculated
@@ -2455,7 +2516,15 @@
         // Remember the checkout so the return can be verified with Yoco.
         // Cart is cleared on return, not here: if they abandon the Yoco page
         // their basket should still be waiting for them.
+        // Also a cookie on the parent domain: Yoco returns customers to the
+        // apex, so an id stored only in localStorage on www.fireandfaye.co.za
+        // would be invisible on the way back — different origin, different
+        // storage. The cookie is readable from both.
         try { localStorage.setItem(PENDING_KEY, data.orderId || ''); } catch (e) {}
+        try {
+          document.cookie = PENDING_KEY + '=' + encodeURIComponent(data.orderId || '') +
+            ';path=/;max-age=3600;domain=.fireandfaye.co.za;SameSite=Lax';
+        } catch (e) {}
         window.location.href = data.redirectUrl;
       } catch (err) {
         console.error('Checkout failed:', err);
@@ -2503,11 +2572,16 @@
     function confirmPayment() {
       let checkoutId = null;
       try { checkoutId = localStorage.getItem(PENDING_KEY); } catch (e) {}
+      if (!checkoutId) {
+        const m = document.cookie.match(new RegExp('(?:^|; )' + PENDING_KEY + '=([^;]*)'));
+        if (m) checkoutId = decodeURIComponent(m[1]);
+      }
       if (!checkoutId) return;
 
       // Clear first: a refresh of the success page must not send a second
       // set of confirmation emails.
       try { localStorage.removeItem(PENDING_KEY); } catch (e) {}
+      try { document.cookie = PENDING_KEY + '=;path=/;max-age=0;domain=.fireandfaye.co.za'; } catch (e) {}
 
       fetch(CONFIRM_ENDPOINT, {
         method: 'POST',
