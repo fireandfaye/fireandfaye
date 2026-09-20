@@ -1349,6 +1349,24 @@
       resize: none;
     }
     .cart-field textarea { min-height: 58px; }
+    .cart-field select {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.85rem;
+      color: var(--espresso);
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      padding-right: 1.3rem;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%233B2F26' stroke-width='1.3'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 0.1rem center;
+    }
+    .cart-field select:invalid { color: var(--text-faint); }
+    .cart-label-opt { text-transform: none; letter-spacing: 0.06em; opacity: 0.8; }
     .cart-field input::placeholder,
     .cart-field textarea::placeholder { color: var(--text-faint); }
     .cart-field.invalid { box-shadow: inset 3px 0 0 var(--gold-deep); }
@@ -1835,9 +1853,38 @@
             <label for="c-phone">Phone</label>
             <input type="tel" id="c-phone" autocomplete="tel" placeholder="082 000 0000" />
           </div>
-          <div class="cart-field" id="cf-address">
-            <label for="c-address">Delivery address</label>
-            <textarea id="c-address" autocomplete="street-address" placeholder="Street, suburb, city, postal code"></textarea>
+          <div id="cf-address-group">
+            <div class="cart-field" id="cf-address">
+              <label for="c-address">Address</label>
+              <input type="text" id="c-address" autocomplete="address-line1" placeholder="12 Acorn Road" />
+            </div>
+            <div class="cart-field" id="cf-address2">
+              <label for="c-address2">Apartment, suite, etc. <span class="cart-label-opt">(optional)</span></label>
+              <input type="text" id="c-address2" autocomplete="address-line2" placeholder="Unit 4B, Acorn Heights" />
+            </div>
+            <div class="cart-field" id="cf-city">
+              <label for="c-city">City</label>
+              <input type="text" id="c-city" autocomplete="address-level2" placeholder="Randburg" />
+            </div>
+            <div class="cart-field" id="cf-province">
+              <label for="c-province">Province</label>
+              <select id="c-province" autocomplete="address-level1" required>
+                <option value="">Select a province</option>
+                <option>Eastern Cape</option>
+                <option>Free State</option>
+                <option>Gauteng</option>
+                <option>KwaZulu-Natal</option>
+                <option>Limpopo</option>
+                <option>Mpumalanga</option>
+                <option>Northern Cape</option>
+                <option>North West</option>
+                <option>Western Cape</option>
+              </select>
+            </div>
+            <div class="cart-field" id="cf-postal">
+              <label for="c-postal">Postal code</label>
+              <input type="text" id="c-postal" autocomplete="postal-code" inputmode="numeric" placeholder="2194" />
+            </div>
           </div>
           <div class="cart-field" id="cf-note">
             <label for="c-note">Order note (optional)</label>
@@ -2187,7 +2234,7 @@
     const cartCloseBtn  = document.getElementById('cart-close');
     const cartPayBtn    = document.getElementById('cart-pay');
     const cartErrorEl   = document.getElementById('cart-error');
-    const addressField  = document.getElementById('cf-address');
+    const addressField  = document.getElementById('cf-address-group');
     const modalCart     = document.getElementById('modal-cart');
 
     const cartCount    = () => cart.reduce((n, l) => n + l.qty, 0);
@@ -2333,17 +2380,41 @@
     }
 
     function collectCustomer() {
-      const name = document.getElementById('c-name').value.trim();
-      const email = document.getElementById('c-email').value.trim();
-      const phone = document.getElementById('c-phone').value.trim();
-      const address = document.getElementById('c-address').value.trim();
-      const note = document.getElementById('c-note').value.trim();
+      const val = (id) => document.getElementById(id).value.trim();
+      const name = val('c-name');
+      const email = val('c-email');
+      const phone = val('c-phone');
+      const note = val('c-note');
       const method = shippingMethod();
 
       if (!name) { flagInvalid('cf-name'); return showCartError('Please enter your name.'), null; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { flagInvalid('cf-email'); return showCartError('Please enter a valid email address.'), null; }
       if (phone.replace(/\D/g, '').length < 9) { flagInvalid('cf-phone'); return showCartError('Please enter a contactable phone number.'), null; }
-      if (method !== 'collection' && address.length < 10) { flagInvalid('cf-address'); return showCartError('Please enter a full delivery address.'), null; }
+
+      let address = '';
+      if (method !== 'collection') {
+        const line1 = val('c-address');
+        const line2 = val('c-address2');
+        const city = val('c-city');
+        const province = val('c-province');
+        const postal = val('c-postal');
+
+        if (line1.length < 3) { flagInvalid('cf-address'); return showCartError('Please enter a street address.'), null; }
+        if (!city) { flagInvalid('cf-city'); return showCartError('Please enter a city or town.'), null; }
+        if (!province) { flagInvalid('cf-province'); return showCartError('Please choose a province.'), null; }
+        if (!/^\d{4}$/.test(postal)) { flagInvalid('cf-postal'); return showCartError('South African postal codes are four digits.'), null; }
+
+        // Gauteng delivery is R20 cheaper. Without this, a Cape Town address
+        // could be sent at the Gauteng rate and the shop absorbs the shortfall.
+        if (method === 'gauteng' && province !== 'Gauteng') {
+          flagInvalid('cf-province');
+          return showCartError(`You've selected Gauteng delivery but a ${province} address. Please choose nationwide delivery.`), null;
+        }
+
+        // The backend and the order email take one address string, so the
+        // parts are joined here rather than changing that contract.
+        address = [line1, line2, city, province, postal].filter(Boolean).join('\n');
+      }
 
       return { name, email, phone, address, note };
     }
