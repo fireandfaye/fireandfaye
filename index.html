@@ -108,7 +108,11 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 7rem 2rem 5rem;
+      /* Bottom padding must clear .hero-scroll, which is absolutely
+         positioned and stands ~5.9rem tall including its offset. At 5rem it
+         overlapped the content — invisible on a tall window, colliding with
+         the Explore button on a short one. */
+      padding: 7rem 2rem 8rem;
       position: relative;
       overflow: hidden;
     }
@@ -228,6 +232,10 @@
     @keyframes scrollPulse {
       0%, 100% { opacity: 0.4; transform: scaleY(1); }
       50% { opacity: 1; transform: scaleY(1.15); }
+    }
+    @media (max-height: 680px) {
+      .hero { padding-bottom: 4rem; }
+      .hero-scroll { display: none; }
     }
 
     /* ── STORY SECTION ──────────────────────────── */
