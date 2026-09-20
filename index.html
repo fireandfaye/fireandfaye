@@ -213,7 +213,7 @@
       flex-direction: column;
       align-items: center;
       gap: 0.5rem;
-      animation: fadeUp 1.5s 1.2s ease forwards;
+      animation: fadeUpCentred 1.5s 1.2s ease forwards;
       opacity: 0;
     }
     .hero-scroll span {
@@ -1498,6 +1498,13 @@
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(22px); }
       to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Same as fadeUp, but keeps the -50% that horizontally centres an
+       absolutely positioned element. A transform in a keyframe replaces the
+       element's own transform outright rather than adding to it. */
+    @keyframes fadeUpCentred {
+      from { opacity: 0; transform: translate(-50%, 22px); }
+      to   { opacity: 1; transform: translate(-50%, 0); }
     }
     .reveal {
       opacity: 0;
