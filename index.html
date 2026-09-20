@@ -1743,12 +1743,18 @@
         </div>
       </div>
 
+      <!-- NOTIFY ME — temporarily disabled, to be restored later.
+           Also commented out: handleNotify() in the script below.
+           The .notify-bar / .notify-btn / .notify-note styles are left in
+           place, so uncommenting this block is all that is needed.
+
       <p class="reveal notify-note" style="margin-bottom:0.9rem;">Drop your email to be notified first when the spirit world opens</p>
       <div class="notify-bar reveal">
         <input type="email" id="notify-email" placeholder="your@email.com" />
         <button class="notify-btn" onclick="handleNotify()">Notify Me</button>
       </div>
       <p class="notify-note reveal" id="notify-confirm" style="display:none; color:var(--sage-deep);">✦ You're on the list — we'll reach out when the doors open</p>
+      -->
     </div>
   </section>
 
@@ -2099,7 +2105,8 @@
       if (e.key === 'Escape') closeModal();
     });
 
-    // ── Notify Me handler ────────────────────────
+    // ── Notify Me handler — temporarily disabled with its markup above ──
+    /*
     function handleNotify() {
       const input = document.getElementById('notify-email');
       const confirm = document.getElementById('notify-confirm');
@@ -2116,6 +2123,7 @@
       input.value = '';
       input.placeholder = 'your@email.com';
     }
+    */
 
     // ── Form handler ─────────────────────────────
     function handleSubmit(e) {
