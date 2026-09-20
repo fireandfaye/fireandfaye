@@ -1400,8 +1400,14 @@
     }
 
     /* Add-to-cart button in the product modal */
-    .modal-add {
+    .modal-actions {
       align-self: flex-start;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      margin-bottom: 1.6rem;
+    }
+    .modal-add {
       font-family: 'Montserrat', sans-serif;
       font-size: 0.7rem;
       letter-spacing: 0.22em;
@@ -1413,10 +1419,33 @@
       border-radius: 1px;
       cursor: pointer;
       transition: opacity 0.22s, transform 0.22s, background 0.22s;
-      margin-bottom: 1.6rem;
     }
     .modal-add:hover { opacity: 0.88; transform: translateY(-1px); }
     .modal-add.added { background: var(--sage-deep); color: var(--white); }
+
+    /* Secondary action, shown only once there is something to go to. The 1px
+       is taken out of the padding so it matches Add to Cart's height. */
+    .modal-cart {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--espresso);
+      background: transparent;
+      border: 1px solid var(--line-strong);
+      padding: calc(0.9rem - 1px) 2.2rem;
+      border-radius: 1px;
+      cursor: pointer;
+      transition: color 0.25s, border-color 0.25s, background 0.25s;
+    }
+    .modal-cart:hover {
+      color: var(--gold-deep);
+      border-color: var(--gold-deep);
+      background: var(--gold-dim);
+    }
+    .modal-cart[hidden] { display: none; }
+
+    .nav-logo-link { display: flex; align-items: center; }
 
     /* Payment-return banner */
     .pay-banner {
@@ -1486,7 +1515,7 @@
 
   <!-- NAV -->
   <nav>
-    <div class="nav-logo"><img class="nav-logo-img brand-logo-img" data-role="nav" alt="fire&amp;faye. dream shop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" /></div>
+    <div class="nav-logo"><a class="nav-logo-link" id="nav-logo-link" href="#" aria-label="fire&amp;faye. — back to top"><img class="nav-logo-img brand-logo-img" data-role="nav" alt="fire&amp;faye. dream shop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" /></a></div>
     <ul class="nav-links">
       <li class="nav-dropdown" id="shop-dropdown">
         <button class="nav-dropdown-trigger" id="shop-dropdown-trigger" type="button" aria-haspopup="true" aria-expanded="false">
@@ -1624,7 +1653,10 @@
         <div class="modal-name" id="modal-name"></div>
         <div class="modal-price" id="modal-price"></div>
         <p class="modal-desc" id="modal-desc"></p>
-        <button class="modal-add" id="modal-add" type="button">Add to Cart</button>
+        <div class="modal-actions">
+          <button class="modal-add" id="modal-add" type="button">Add to Cart</button>
+          <button class="modal-cart" id="modal-cart" type="button" hidden>Go to Cart</button>
+        </div>
         <p class="modal-shipping-note" id="modal-shipping-note">One combined shipping fee per order, however many pieces you add — R75 in Gauteng, R95 nationwide, free for collection. Payment is processed securely by Yoco.</p>
       </div>
     </div>
@@ -2133,6 +2165,7 @@
     const cartPayBtn    = document.getElementById('cart-pay');
     const cartErrorEl   = document.getElementById('cart-error');
     const addressField  = document.getElementById('cf-address');
+    const modalCart     = document.getElementById('modal-cart');
 
     const cartCount    = () => cart.reduce((n, l) => n + l.qty, 0);
     const subtotalCents = () => cart.reduce((n, l) => n + centsOf(productById(l.id)) * l.qty, 0);
@@ -2174,6 +2207,7 @@
       cartToggle.setAttribute('aria-label', count ? `Your cart, ${count} item${count === 1 ? '' : 's'}` : 'Your cart, empty');
 
       const hasItems = cart.length > 0;
+      modalCart.hidden = !hasItems;
       cartEmpty.hidden = hasItems;
       cartCheckout.hidden = !hasItems;
       cartFoot.hidden = !hasItems;
@@ -2371,6 +2405,11 @@
       modalAdd.classList.remove('added');
     }
 
+    modalCart.addEventListener('click', () => {
+      closeModal();
+      openCart();
+    });
+
     modalAdd.addEventListener('click', () => {
       if (!currentProduct) return;
       addToCart(currentProduct.id, 1);
@@ -2378,6 +2417,12 @@
       modalAdd.classList.add('added');
       clearTimeout(addedTimer);
       addedTimer = setTimeout(resetAddButton, 2000);
+    });
+
+    // Logo returns to the top without leaving a '#' in the address bar.
+    document.getElementById('nav-logo-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     renderCart();
