@@ -2191,6 +2191,8 @@
     // server-side in create-yoco-checkout from products.js, so editing these
     // numbers in the browser changes nothing about what gets charged.
     const CHECKOUT_ENDPOINT = 'https://fireandfaye-yoco-backend.vercel.app/api/create-yoco-checkout';
+    const CONFIRM_ENDPOINT  = 'https://fireandfaye-yoco-backend.vercel.app/api/confirm-order';
+    const PENDING_KEY = 'ff-pending-checkout';
     // Keep in step with SHIPPING_CENTS in the backend's products.js. These are
     // only what the customer is shown; the backend's values are what gets charged.
     const SHIPPING_CENTS = { gauteng: 7500, nationwide: 9500, collection: 0 };
@@ -2450,8 +2452,10 @@
           return;
         }
 
+        // Remember the checkout so the return can be verified with Yoco.
         // Cart is cleared on return, not here: if they abandon the Yoco page
         // their basket should still be waiting for them.
+        try { localStorage.setItem(PENDING_KEY, data.orderId || ''); } catch (e) {}
         window.location.href = data.redirectUrl;
       } catch (err) {
         console.error('Checkout failed:', err);
@@ -2481,6 +2485,7 @@
         saveCart();
         renderCart();
         showPayBanner('Thank you &mdash; your payment went through. A confirmation is on its way, and we&rsquo;ll be in touch about delivery.', false);
+        confirmPayment();
       } else if (status === 'cancelled') {
         showPayBanner('Payment cancelled. Your cart has been kept, so you can pick up where you left off.', true);
       } else if (status === 'failed') {
@@ -2490,6 +2495,29 @@
       // Don't leave ?payment= in the URL to be re-triggered on refresh.
       window.history.replaceState({}, '', window.location.pathname);
     })();
+
+    // ── Confirming the payment ─────────────────────
+    // The ?payment=success in the URL proves nothing on its own — anyone can
+    // type it. This hands the checkout id to the backend, which asks Yoco
+    // directly whether it was really paid before anything is emailed.
+    function confirmPayment() {
+      let checkoutId = null;
+      try { checkoutId = localStorage.getItem(PENDING_KEY); } catch (e) {}
+      if (!checkoutId) return;
+
+      // Clear first: a refresh of the success page must not send a second
+      // set of confirmation emails.
+      try { localStorage.removeItem(PENDING_KEY); } catch (e) {}
+
+      fetch(CONFIRM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checkoutId }),
+      })
+        .then(r => r.json())
+        .then(d => console.log('Payment confirmation:', d))
+        .catch(err => console.error('Could not confirm payment:', err));
+    }
 
     // ── Add to cart, from the product modal ────────
     let addedTimer = null;
