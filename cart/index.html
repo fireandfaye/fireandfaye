@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Your Cart | fire&amp;faye</title>
+  <meta name="description" content="Your fire&amp;faye cart." />
+  <link rel="canonical" href="https://fireandfaye.co.za/cart/" />
+  <meta name="theme-color" content="#F7F4EF" />
+  <meta name="robots" content="noindex, follow" />
+
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="fire&amp;faye." />
+  <meta property="og:locale" content="en_ZA" />
+  <meta property="og:url" content="https://fireandfaye.co.za/cart/" />
+  <meta property="og:title" content="Your Cart | fire&amp;faye" />
+  <meta property="og:description" content="Your fire&amp;faye cart." />
+  <meta property="og:image" content="https://fireandfaye.co.za/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Your Cart | fire&amp;faye" />
+  <meta name="twitter:description" content="Your fire&amp;faye cart." />
+  <meta name="twitter:image" content="https://fireandfaye.co.za/og-image.jpg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-logo"><a class="nav-logo-link" id="nav-logo-link" href="/" aria-label="fire&amp;faye. — back to top"><img class="nav-logo-img brand-logo-img" data-role="nav" alt="fire&amp;faye. dream shop" src="/logo.png" /></a></div>
+    <ul class="nav-links">
+      <li class="nav-dropdown" id="shop-dropdown">
+        <button class="nav-dropdown-trigger" id="shop-dropdown-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+          Shop <span class="nav-caret">&#9662;</span>
+        </button>
+        <ul class="nav-dropdown-menu" id="shop-dropdown-menu">
+          <li><a href="/necklaces/">Necklaces</a></li>
+          <li><a href="/earrings/">Earrings</a></li>
+          <li><a href="/bracelets/">Bracelets</a></li>
+          <li><a href="/rings/">Rings</a></li>
+          <!-- <li><a href="/sale/">Last Season Sale</a></li> unused for now -->
+        </ul>
+      </li>
+      <li><a href="/#story">Our Story</a></li>
+      <li><a href="/#spirit-world">Spirit World</a></li>
+      <li><a href="/#enquire">Enquire</a></li>
+    </ul>
+    <div class="nav-actions">
+      <div class="nav-cart-wrap">
+      <a class="nav-cart-toggle" id="nav-cart-toggle" href="/cart/" aria-label="Your cart, empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2 L3 6 v14 a1 1 0 0 0 1 1 h16 a1 1 0 0 0 1 -1 V6 l-3 -4 z"></path>
+          <path d="M3 6 h18"></path>
+          <path d="M16 10 a4 4 0 0 1 -8 0"></path>
+        </svg>
+        <span class="nav-cart-count" id="cart-count" hidden>0</span>
+      </a>
+        <div class="cart-popover" id="cart-popover" role="status" aria-live="polite">
+          <strong>Your cart is empty</strong>
+          <span>Add a piece to get started.</span>
+        </div>
+      </div>
+      <a class="nav-insta" href="https://instagram.com/fireandfaye" target="_blank" rel="noopener">@fireandfaye</a>
+    </div>
+  </nav>
+
+  <main class="cart-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span class="crumb-sep">/</span><span aria-current="page">Your Cart</span></nav>
+
+    <h1 class="cart-page-title">Your Cart</h1>
+
+    <div class="cart-empty" id="cart-empty">
+      <p>Your cart is empty.<br />Browse the collection to add a piece.</p>
+      <a class="btn-primary" href="/#collection">Browse the collection</a>
+    </div>
+
+    <div class="cart-page-grid">
+      <div class="cart-page-main" id="cart-checkout" hidden>
+        <div id="cart-lines"></div>
+
+        <div class="cart-section-label">Delivery</div>
+        <p class="cart-free-ship" id="cart-free-ship" aria-live="polite"></p>
+        <label class="ship-opt">
+          <input type="radio" name="shipping" value="delivery" checked />
+          <span class="ship-opt-text">
+            <span class="ship-opt-name">Delivery</span>
+            <span class="ship-opt-note" id="delivery-note">Courier, 2&ndash;5 working days</span>
+          </span>
+          <span class="ship-opt-price" id="delivery-price"></span>
+        </label>
+
+        <div class="cart-section-label">Your details</div>
+        <div class="cart-field" id="cf-name">
+          <label for="c-name">Full name</label>
+          <input type="text" id="c-name" autocomplete="name" placeholder="e.g. Naledi Mokoena" />
+        </div>
+        <div class="cart-field" id="cf-email">
+          <label for="c-email">Email</label>
+          <input type="email" id="c-email" autocomplete="email" placeholder="you@email.com" />
+        </div>
+        <div class="cart-field" id="cf-phone">
+          <label for="c-phone">Phone</label>
+          <input type="tel" id="c-phone" autocomplete="tel" placeholder="082 000 0000" />
+        </div>
+        <div id="cf-address-group">
+          <div class="cart-field" id="cf-address">
+            <label for="c-address">Delivery address</label>
+            <input type="text" id="c-address" autocomplete="off" placeholder="Start typing your street address"
+                   role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addr-suggest" />
+            <ul class="addr-suggest" id="addr-suggest" role="listbox" hidden></ul>
+            <p class="addr-status" id="addr-status" aria-live="polite" hidden></p>
+          </div>
+          <div class="cart-field" id="cf-address2">
+            <label for="c-address2">Unit, complex or extra details <span class="cart-label-opt">(optional)</span></label>
+            <input type="text" id="c-address2" autocomplete="address-line2" placeholder="Unit 4B, Acorn Heights" />
+          </div>
+        </div>
+        <div class="cart-field" id="cf-note">
+          <label for="c-note">Order note (optional)</label>
+          <textarea id="c-note" placeholder="Gift wrapping, a message, anything we should know"></textarea>
+        </div>
+      </div>
+
+      <aside class="cart-foot" id="cart-foot" hidden>
+        <div class="cart-total-row"><span>Subtotal</span><span id="cart-subtotal">R0.00</span></div>
+        <div class="cart-total-row"><span>Shipping</span><span id="cart-shipping">R0.00</span></div>
+        <div class="cart-total-row grand"><span>Total</span><span id="cart-total">R0.00</span></div>
+        <button class="cart-pay" id="cart-pay" type="button">Pay with Yoco</button>
+        <p class="cart-error" id="cart-error" hidden></p>
+        <p class="cart-secure-note">Card details are entered on Yoco&rsquo;s secure payment page, never on this site.</p>
+      </aside>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-brand"><img class="footer-logo-img brand-logo-img" data-role="footer" alt="fire&amp;faye. dream shop" src="/logo.png" /></div>
+    <ul class="footer-links">
+      <li><a href="/#story">Our Story</a></li>
+      <li><a href="/#collection">Collection</a></li>
+      <li><a href="/#enquire">Enquire</a></li>
+      <li><a href="https://instagram.com/fireandfaye" target="_blank">Instagram</a></li>
+    </ul>
+    <p class="footer-copy">© 2026 fire&amp;faye. Handmade with intention.</p>
+  </footer>
+
+  <script src="/products.js"></script>
+  <script src="/app.js"></script>
+
+</body>
+</html>
