@@ -29,6 +29,37 @@
       }
     });
 
+    // ── Mobile menu ────────────────────────────────
+    // Below 680px the links collapse behind the burger. The panel is the same
+    // <ul> as the desktop nav, so there is only one set of links.
+    const navEl = document.querySelector('body > nav');
+    const navBurger = document.getElementById('nav-burger');
+    if (navEl && navBurger) {
+      function setMenu(open) {
+        navEl.classList.toggle('menu-open', open);
+        navBurger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        navBurger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        if (!open) {
+          shopDropdown.classList.remove('open');
+          shopDropdownTrigger.setAttribute('aria-expanded', 'false');
+        }
+      }
+      navBurger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setMenu(!navEl.classList.contains('menu-open'));
+      });
+      document.addEventListener('click', (e) => {
+        if (!navEl.contains(e.target)) setMenu(false);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setMenu(false);
+      });
+      // Following a link should leave the panel closed behind it.
+      document.querySelectorAll('#nav-links a').forEach(a => {
+        a.addEventListener('click', () => setMenu(false));
+      });
+    }
+
     // ── Cart ──────────────────────────────────────
     // Prices shown here are for display only. The real total is recalculated
     // server-side in create-yoco-checkout from products.js, so editing these
