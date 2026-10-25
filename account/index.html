@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Your Account | fire&amp;faye</title>
+  <meta name="description" content="Sign in to see your fire&amp;faye orders." />
+  <link rel="canonical" href="https://fireandfaye.co.za/account/" />
+  <meta name="theme-color" content="#F7F4EF" />
+  <meta name="robots" content="noindex, follow" />
+
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="fire&amp;faye." />
+  <meta property="og:locale" content="en_ZA" />
+  <meta property="og:url" content="https://fireandfaye.co.za/account/" />
+  <meta property="og:title" content="Your Account | fire&amp;faye" />
+  <meta property="og:description" content="Sign in to see your fire&amp;faye orders." />
+  <meta property="og:image" content="https://fireandfaye.co.za/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Your Account | fire&amp;faye" />
+  <meta name="twitter:description" content="Sign in to see your fire&amp;faye orders." />
+  <meta name="twitter:image" content="https://fireandfaye.co.za/og-image.jpg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-logo"><a class="nav-logo-link" id="nav-logo-link" href="/" aria-label="fire&amp;faye. — back to top"><img class="nav-logo-img brand-logo-img" data-role="nav" alt="fire&amp;faye. dream shop" src="/logo.png" /></a></div>
+    <ul class="nav-links" id="nav-links">
+      <li class="nav-dropdown" id="shop-dropdown">
+        <button class="nav-dropdown-trigger" id="shop-dropdown-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+          Shop <span class="nav-caret">&#9662;</span>
+        </button>
+        <ul class="nav-dropdown-menu" id="shop-dropdown-menu">
+          <li><a href="/necklaces/">Necklaces</a></li>
+          <li><a href="/earrings/">Earrings</a></li>
+          <li><a href="/bracelets/">Bracelets</a></li>
+          <li><a href="/rings/">Rings</a></li>
+          <!-- <li><a href="/sale/">Last Season Sale</a></li> unused for now -->
+        </ul>
+      </li>
+      <li><a href="/#story">Our Story</a></li>
+      <li><a href="/#spirit-world">Spirit World</a></li>
+      <li><a href="/#enquire">Enquire</a></li>
+      <li><a href="/account/">Account</a></li>
+    </ul>
+    <div class="nav-actions">
+      <div class="nav-cart-wrap">
+      <a class="nav-cart-toggle" id="nav-cart-toggle" href="/cart/" aria-label="Your cart, empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2 L3 6 v14 a1 1 0 0 0 1 1 h16 a1 1 0 0 0 1 -1 V6 l-3 -4 z"></path>
+          <path d="M3 6 h18"></path>
+          <path d="M16 10 a4 4 0 0 1 -8 0"></path>
+        </svg>
+        <span class="nav-cart-count" id="cart-count" hidden>0</span>
+      </a>
+        <div class="cart-popover" id="cart-popover" role="status" aria-live="polite">
+          <strong>Your cart is empty</strong>
+          <span>Add a piece to get started.</span>
+        </div>
+      </div>
+      <a class="nav-insta" href="https://instagram.com/fireandfaye" target="_blank" rel="noopener">@fireandfaye</a>
+      <button class="nav-burger" id="nav-burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="account" id="account">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span class="crumb-sep">/</span><span aria-current="page">Your Account</span></nav>
+
+    <h1 class="account-title">Your Account</h1>
+    <p class="account-error" id="acc-error" hidden></p>
+
+    <section class="account-card" id="acc-step-email">
+      <h2 class="account-heading">Sign in or create an account</h2>
+      <p class="account-lead">They&rsquo;re the same thing here &mdash; enter your email and we&rsquo;ll send you a six-digit code. If you haven&rsquo;t ordered before, this creates your account. There&rsquo;s no password to remember.</p>
+      <div class="cart-field">
+        <label for="acc-email">Email</label>
+        <input type="email" id="acc-email" autocomplete="email" placeholder="you@email.com" />
+      </div>
+      <button class="btn-primary account-btn" id="acc-send" type="button">Email me a code</button>
+      <p class="account-muted">Orders you placed as a guest will appear here too, as long as you use the same email address.</p>
+    </section>
+
+    <section class="account-card" id="acc-step-code" hidden>
+      <h2 class="account-heading">Check your email</h2>
+      <p class="account-lead">We&rsquo;ve sent a six-digit code to <strong id="acc-sent-to"></strong>. It expires in 60 minutes.</p>
+      <div class="cart-field">
+        <label for="acc-code">Six-digit code</label>
+        <input type="text" id="acc-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="000000" />
+      </div>
+      <button class="btn-primary account-btn" id="acc-verify" type="button">Sign in</button>
+      <button class="account-link" id="acc-back" type="button">Use a different email</button>
+    </section>
+
+    <section id="acc-step-orders" hidden>
+      <div class="account-bar">
+        <p class="account-muted">Signed in as <strong id="acc-who"></strong></p>
+        <button class="account-link" id="acc-signout" type="button">Sign out</button>
+      </div>
+      <div id="acc-orders"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-brand"><img class="footer-logo-img brand-logo-img" data-role="footer" alt="fire&amp;faye. dream shop" src="/logo.png" /></div>
+    <ul class="footer-links">
+      <li><a href="/#story">Our Story</a></li>
+      <li><a href="/#collection">Collection</a></li>
+      <li><a href="/#enquire">Enquire</a></li>
+      <li><a href="https://instagram.com/fireandfaye" target="_blank">Instagram</a></li>
+    </ul>
+    <p class="footer-copy">© 2026 fire&amp;faye. Handmade with intention.</p>
+  </footer>
+
+  <script src="/products.js"></script>
+  <script src="/app.js"></script>
+  <script src="/account.js"></script>
+
+</body>
+</html>

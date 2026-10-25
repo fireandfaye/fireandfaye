@@ -397,6 +397,61 @@ def cart_page(nav, footer):
     )
 
 
+def account_page(nav, footer):
+    """Sign in with a one-time code, then your orders. noindex — a logged-out
+    visitor sees only a form, and there is nothing here to rank for."""
+    return (
+        head("Your Account | " + BRAND,
+             "Sign in to see your fire&amp;faye orders.",
+             SITE + "/account/", SITE + "/og-image.jpg", noindex=True)
+        + nav + """
+
+  <main class="account" id="account">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span class="crumb-sep">/</span><span aria-current="page">Your Account</span></nav>
+
+    <h1 class="account-title">Your Account</h1>
+    <p class="account-error" id="acc-error" hidden></p>
+
+    <section class="account-card" id="acc-step-email">
+      <h2 class="account-heading">Sign in or create an account</h2>
+      <p class="account-lead">They&rsquo;re the same thing here &mdash; enter your email and we&rsquo;ll send you a six-digit code. If you haven&rsquo;t ordered before, this creates your account. There&rsquo;s no password to remember.</p>
+      <div class="cart-field">
+        <label for="acc-email">Email</label>
+        <input type="email" id="acc-email" autocomplete="email" placeholder="you@email.com" />
+      </div>
+      <button class="btn-primary account-btn" id="acc-send" type="button">Email me a code</button>
+      <p class="account-muted">Orders you placed as a guest will appear here too, as long as you use the same email address.</p>
+    </section>
+
+    <section class="account-card" id="acc-step-code" hidden>
+      <h2 class="account-heading">Check your email</h2>
+      <p class="account-lead">We&rsquo;ve sent a six-digit code to <strong id="acc-sent-to"></strong>. It expires in 60 minutes.</p>
+      <div class="cart-field">
+        <label for="acc-code">Six-digit code</label>
+        <input type="text" id="acc-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="000000" />
+      </div>
+      <button class="btn-primary account-btn" id="acc-verify" type="button">Sign in</button>
+      <button class="account-link" id="acc-back" type="button">Use a different email</button>
+    </section>
+
+    <section id="acc-step-orders" hidden>
+      <div class="account-bar">
+        <p class="account-muted">Signed in as <strong id="acc-who"></strong></p>
+        <button class="account-link" id="acc-signout" type="button">Sign out</button>
+      </div>
+      <div id="acc-orders"></div>
+    </section>
+  </main>
+
+"""
+        + footer + "\n\n"
+        + '  <script src="/products.js"></script>\n'
+        + '  <script src="/app.js"></script>\n'
+        + '  <script src="/account.js"></script>\n\n'
+        + "</body>\n</html>\n"
+    )
+
+
 def sitemap(products):
     today = date.today().isoformat()
     urls = [(SITE + "/", "1.0")]
@@ -440,6 +495,10 @@ def main():
     os.makedirs("cart", exist_ok=True)
     open("cart/index.html", "w", encoding="utf-8").write(cart_page(nav, footer))
     written.append("cart/index.html")
+
+    os.makedirs("account", exist_ok=True)
+    open("account/index.html", "w", encoding="utf-8").write(account_page(nav, footer))
+    written.append("account/index.html")
 
     open("sitemap.xml", "w", encoding="utf-8").write(sitemap(products))
     written.append("sitemap.xml")

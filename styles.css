@@ -1887,3 +1887,179 @@
       }
       .nav-dropdown-menu a { display: block; padding: 0.75rem 2.4rem; }
     }
+
+    /* ── Account page ──────────────────────────────── */
+    .account {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 7rem 2rem 6rem;
+    }
+    .account-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      color: var(--espresso);
+      margin-bottom: 2rem;
+    }
+    .account-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      padding: 2rem 0 2rem;
+    }
+    .account-lead {
+      font-size: 0.9rem;
+      line-height: 1.8;
+      color: var(--text-soft);
+      padding: 0 1.6rem 1.4rem;
+    }
+    .account-btn {
+      display: block;
+      width: calc(100% - 3.2rem);
+      margin: 1.4rem 1.6rem 0;
+      border: none;
+      cursor: pointer;
+      opacity: 1;
+      animation: none;
+      text-align: center;
+    }
+    .account-link {
+      display: block;
+      margin: 1rem auto 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .account-link:hover { color: var(--gold-deep); }
+    .account-muted {
+      font-size: 0.75rem;
+      line-height: 1.7;
+      color: var(--text-faint);
+      padding: 1.2rem 1.6rem 0;
+    }
+    .account-error {
+      background: var(--blush);
+      color: var(--espresso);
+      font-size: 0.78rem;
+      padding: 0.8rem 1.1rem;
+      margin-bottom: 1.4rem;
+    }
+    .account-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 1rem;
+      margin-bottom: 1.8rem;
+    }
+    .account-bar .account-muted { padding: 0; }
+    .account-bar .account-link { margin: 0; }
+
+    .order {
+      background: var(--white);
+      border: 1px solid var(--line);
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1.2rem;
+    }
+    .order-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .order-date {
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 0.3rem;
+    }
+    .order-total {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      color: var(--gold-deep);
+    }
+    .order-status {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.7rem;
+      color: var(--white);
+      background: var(--taupe);
+      white-space: nowrap;
+    }
+    .order-status-paid { background: var(--sage-deep); }
+    .order-status-pending { background: var(--taupe); }
+    .order-status-cancelled,
+    .order-status-failed { background: var(--text-faint); }
+
+    .order-items { list-style: none; margin-bottom: 1rem; }
+    .order-items li {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: var(--espresso);
+      padding: 0.35rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .order-items li:last-child { border-bottom: none; }
+    .order-address {
+      font-size: 0.75rem;
+      line-height: 1.7;
+      color: var(--text-soft);
+      white-space: normal;
+    }
+
+    @media (max-width: 820px) {
+      .account { padding: 6rem 1.5rem 4rem; }
+    }
+
+    /* ── Form fields: make the whole box clickable ──────────────────
+       These inputs set width:100% but no padding or height, so the only
+       clickable strip was the ~18px the text sits on — the padding around
+       them looked like part of the field and did nothing. Giving the input
+       its own vertical padding and a minimum height makes the target the
+       size it already appears to be. 44px is the usual minimum for a
+       comfortable touch target. */
+    .cart-field input,
+    .cart-field select,
+    .form-field input,
+    .form-field-full input {
+      padding: 0.5rem 0;
+      min-height: 2.5rem;
+      box-sizing: border-box;
+      cursor: text;
+    }
+    .cart-field textarea,
+    .form-field textarea,
+    .form-field-full textarea {
+      padding: 0.5rem 0;
+      box-sizing: border-box;
+      cursor: text;
+    }
+    .cart-field select { cursor: pointer; }
+
+    /* The label sits above the input and already focuses it when clicked,
+       but the field's own padding did not. Trimming the vertical padding
+       keeps the overall height about the same now the input carries its
+       own, so the cart does not grow taller. */
+    .cart-field { padding-top: 0.6rem; padding-bottom: 0.6rem; }
+
+    .account-heading {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: 1.3rem;
+      color: var(--espresso);
+      padding: 0 1.6rem 0.7rem;
+    }
