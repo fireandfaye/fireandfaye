@@ -236,9 +236,9 @@
       document.getElementById('cart-total').textContent =
         ship === null ? `${rands(sub)} + delivery` : rands(sub + ship);
 
-      if (deliveryAddress) {
+      if (deliveryAddress && cartAddress) {
         const fee = freeShip ? 'free delivery' : `${rands(addrFee)} delivery`;
-        setAddrStatus(`\u2713 ${deliveryAddress.province} address \u00b7 ${fee}` + (deliveryAddress.hasStreetNumber
+        cartAddress.setStatus(`\u2713 ${deliveryAddress.province} address \u00b7 ${fee}` + (deliveryAddress.hasStreetNumber
           ? '' : '. No street number found \u2014 please add it in the line below.'));
       }
     }
@@ -250,41 +250,34 @@
       radio.addEventListener('change', () => { showCartError(''); updateTotals(); });
     });
 
-    // ── Delivery address (Google Places) ──────────
+    // ── Address autocomplete (Google Places) ──────
     // The customer picks their address from Google's suggestions; its province
     // sets the delivery fee. Only the place id is sent to the backend, which
     // looks the address up again itself before charging, so nothing typed or
     // edited here can change the fee.
     //
+    // Built as a factory because two pages need it: the cart, and the details
+    // form on /account/. One implementation, so a fix to the address handling
+    // cannot land in one place and not the other.
+    //
     // Browser key: public by design. In Google Cloud it must be restricted to
     // the site's domains (HTTP referrers) and to the Maps JavaScript API and
     // Places API (New). The backend uses a separate server key.
     const GOOGLE_MAPS_BROWSER_KEY = 'AIzaSyC4WvXz0YYwlJuXWCD1_O7XETTywTDmo9M';
-
-    const addrInput   = document.getElementById('c-address');
-    const addrList    = document.getElementById('addr-suggest');
-    const addrStatus  = document.getElementById('addr-status');
-    let placesLoading = null;
-    let sessionToken = null;
-    let addrTimer = null;
-    let addrSeq = 0;
-    let addrOptions = [];
-    let addrActive = -1;
-
-    function setAddrStatus(msg, isError) {
-      addrStatus.textContent = msg;
-      addrStatus.hidden = !msg;
-      addrStatus.classList.toggle('error', Boolean(isError));
-    }
-
     const LOOKUP_DOWN = 'Address lookup is unavailable right now. Please try again later, or send us an enquiry below.';
+
+    let placesLoading = null;
+    const placesFailed = [];          // fields to tell if Google refuses us
 
     function loadPlaces() {
       if (placesLoading) return placesLoading;
       placesLoading = new Promise((resolve, reject) => {
         if (!GOOGLE_MAPS_BROWSER_KEY) return reject(new Error('GOOGLE_MAPS_BROWSER_KEY is not set'));
         // Google calls this if the key is refused (wrong domain, API not enabled).
-        window.gm_authFailure = () => { console.error('Google Maps rejected the browser key'); setAddrStatus(LOOKUP_DOWN, true); };
+        window.gm_authFailure = () => {
+          console.error('Google Maps rejected the browser key');
+          placesFailed.forEach(fn => fn());
+        };
         window.__ffPlacesReady = resolve;
         const script = document.createElement('script');
         script.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(GOOGLE_MAPS_BROWSER_KEY)
@@ -293,135 +286,159 @@
         script.onerror = () => reject(new Error('Google Maps script failed to load'));
         document.head.appendChild(script);
       }).then(() => google.maps.importLibrary('places'));
-      placesLoading.catch(err => { console.error(err); setAddrStatus(LOOKUP_DOWN, true); });
+      placesLoading.catch(err => { console.error(err); placesFailed.forEach(fn => fn()); });
       return placesLoading;
     }
 
-    function closeSuggestions() {
-      addrList.hidden = true;
-      addrList.innerHTML = '';
-      addrOptions = [];
-      addrActive = -1;
-      addrInput.setAttribute('aria-expanded', 'false');
-      addrInput.removeAttribute('aria-activedescendant');
-    }
+    // onChoose(address) fires with a verified South African address.
+    // onEdit()           fires when the customer edits after choosing, so the
+    //                    caller can treat the previous choice as stale.
+    function createAddressField({ input, list, status, onChoose, onEdit }) {
+      if (!input || !list || !status) return null;
 
-    function highlight(i) {
-      addrActive = i;
-      addrList.querySelectorAll('li[role="option"]').forEach((li, n) => li.classList.toggle('active', n === i));
-      if (i >= 0) addrInput.setAttribute('aria-activedescendant', `addr-opt-${i}`);
-      else addrInput.removeAttribute('aria-activedescendant');
-    }
+      let sessionToken = null, timer = null, seq = 0, options = [], active = -1;
 
-    function renderSuggestions(predictions) {
-      addrList.innerHTML = '';
-      addrOptions = predictions;
-      addrActive = -1;
-      if (!predictions.length) {
-        const li = document.createElement('li');
-        li.className = 'addr-empty';
-        li.textContent = 'No matching addresses. Try just your street and suburb, or pick the nearest street and add details below.';
-        addrList.appendChild(li);
+      function setStatus(msg, isError) {
+        status.textContent = msg;
+        status.hidden = !msg;
+        status.classList.toggle('error', Boolean(isError));
       }
-      predictions.forEach((pred, i) => {
-        const li = document.createElement('li');
-        li.id = `addr-opt-${i}`;
-        li.setAttribute('role', 'option');
-        li.textContent = pred.mainText ? pred.mainText.toString() : pred.text.toString();
-        if (pred.secondaryText) {
-          const small = document.createElement('small');
-          small.textContent = pred.secondaryText.toString();
-          li.appendChild(small);
+      placesFailed.push(() => setStatus(LOOKUP_DOWN, true));
+
+      function closeSuggestions() {
+        list.hidden = true;
+        list.innerHTML = '';
+        options = [];
+        active = -1;
+        input.setAttribute('aria-expanded', 'false');
+        input.removeAttribute('aria-activedescendant');
+      }
+
+      function highlight(i) {
+        active = i;
+        list.querySelectorAll('li[role="option"]').forEach((li, n) => li.classList.toggle('active', n === i));
+        if (i >= 0) input.setAttribute('aria-activedescendant', `${list.id}-opt-${i}`);
+        else input.removeAttribute('aria-activedescendant');
+      }
+
+      function renderSuggestions(predictions) {
+        list.innerHTML = '';
+        options = predictions;
+        active = -1;
+        if (!predictions.length) {
+          const li = document.createElement('li');
+          li.className = 'addr-empty';
+          li.textContent = 'No matching addresses. Try just your street and suburb, or pick the nearest street and add details below.';
+          list.appendChild(li);
         }
-        // mousedown, not click: it fires before the input's blur closes the list.
-        li.addEventListener('mousedown', (e) => { e.preventDefault(); chooseSuggestion(pred); });
-        li.addEventListener('mouseenter', () => highlight(i));
-        addrList.appendChild(li);
-      });
-      // Required by Google's terms when their results are shown without a map.
-      const attribution = document.createElement('li');
-      attribution.className = 'addr-attribution';
-      attribution.setAttribute('aria-hidden', 'true');
-      attribution.textContent = 'Google Maps';
-      addrList.appendChild(attribution);
-      addrList.hidden = false;
-      addrInput.setAttribute('aria-expanded', 'true');
-    }
-
-    async function fetchSuggestions(query) {
-      let places;
-      try { places = await loadPlaces(); } catch (e) { return; }
-      const seq = ++addrSeq;
-      if (!sessionToken) sessionToken = new places.AutocompleteSessionToken();
-      try {
-        const { suggestions } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input: query,
-          sessionToken,
-          includedRegionCodes: ['za'],
-          includedPrimaryTypes: ['street_address', 'premise', 'subpremise', 'route'],
-          region: 'za',
-          language: 'en',
+        predictions.forEach((pred, i) => {
+          const li = document.createElement('li');
+          li.id = `${list.id}-opt-${i}`;
+          li.setAttribute('role', 'option');
+          li.textContent = pred.mainText ? pred.mainText.toString() : pred.text.toString();
+          if (pred.secondaryText) {
+            const small = document.createElement('small');
+            small.textContent = pred.secondaryText.toString();
+            li.appendChild(small);
+          }
+          // mousedown, not click: it fires before the input's blur closes the list.
+          li.addEventListener('mousedown', (e) => { e.preventDefault(); chooseSuggestion(pred); });
+          li.addEventListener('mouseenter', () => highlight(i));
+          list.appendChild(li);
         });
-        if (seq !== addrSeq) return;   // a newer keystroke has taken over
-        renderSuggestions(suggestions.map(s => s.placePrediction).filter(Boolean));
-      } catch (err) {
-        console.error('Address suggestions failed:', err);
-        if (seq === addrSeq) setAddrStatus('Address lookup failed. Please try again.', true);
+        // Required by Google's terms when their results are shown without a map.
+        const attribution = document.createElement('li');
+        attribution.className = 'addr-attribution';
+        attribution.setAttribute('aria-hidden', 'true');
+        attribution.textContent = 'Google Maps';
+        list.appendChild(attribution);
+        list.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
       }
-    }
 
-    async function chooseSuggestion(prediction) {
-      closeSuggestions();
-      addrSeq++;
-      addrInput.value = prediction.text.toString();
-      setAddrStatus('Checking address\u2026');
-      const place = prediction.toPlace();
-      try {
-        // Ends the autocomplete session, so the suggestions above bill as one lookup.
-        await place.fetchFields({ fields: ['formattedAddress', 'addressComponents'] });
-      } catch (err) {
-        console.error('Address details failed:', err);
-        return setAddrStatus('We could not check that address. Please choose it again.', true);
-      } finally {
-        sessionToken = null;
+      async function fetchSuggestions(query) {
+        let places;
+        try { places = await loadPlaces(); } catch (e) { return; }
+        const mine = ++seq;
+        if (!sessionToken) sessionToken = new places.AutocompleteSessionToken();
+        try {
+          const { suggestions } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+            input: query,
+            sessionToken,
+            includedRegionCodes: ['za'],
+            includedPrimaryTypes: ['street_address', 'premise', 'subpremise', 'route'],
+            region: 'za',
+            language: 'en',
+          });
+          if (mine !== seq) return;   // a newer keystroke has taken over
+          renderSuggestions(suggestions.map(s => s.placePrediction).filter(Boolean));
+        } catch (err) {
+          console.error('Address suggestions failed:', err);
+          if (mine === seq) setStatus('Address lookup failed. Please try again.', true);
+        }
       }
-      const parts = place.addressComponents || [];
-      const find = (type) => parts.find(c => c.types.includes(type));
-      const country = find('country');
-      const province = find('administrative_area_level_1');
-      if (!country || country.shortText !== 'ZA') return setAddrStatus('We only deliver within South Africa.', true);
-      if (!province) return setAddrStatus('Please choose a full street address from the list.', true);
 
-      deliveryAddress = {
-        placeId: place.id,
-        formattedAddress: place.formattedAddress,
-        province: province.longText,
-        hasStreetNumber: Boolean(find('street_number')),
-      };
-      addrInput.value = place.formattedAddress;
-      updateTotals();
+      async function chooseSuggestion(prediction) {
+        closeSuggestions();
+        seq++;
+        input.value = prediction.text.toString();
+        setStatus('Checking address\u2026');
+        const place = prediction.toPlace();
+        try {
+          // Ends the autocomplete session, so the suggestions above bill as one lookup.
+          await place.fetchFields({ fields: ['formattedAddress', 'addressComponents'] });
+        } catch (err) {
+          console.error('Address details failed:', err);
+          return setStatus('We could not check that address. Please choose it again.', true);
+        } finally {
+          sessionToken = null;
+        }
+        const parts = place.addressComponents || [];
+        const find = (type) => parts.find(c => c.types.includes(type));
+        const country = find('country');
+        const province = find('administrative_area_level_1');
+        if (!country || country.shortText !== 'ZA') return setStatus('We only deliver within South Africa.', true);
+        if (!province) return setStatus('Please choose a full street address from the list.', true);
+
+        input.value = place.formattedAddress;
+        if (onChoose) onChoose({
+          placeId: place.id,
+          formattedAddress: place.formattedAddress,
+          province: province.longText,
+          hasStreetNumber: Boolean(find('street_number')),
+        });
+      }
+
+      input.addEventListener('focus', () => { loadPlaces().catch(() => {}); });
+      input.addEventListener('input', () => {
+        if (onEdit) onEdit();
+        setStatus('');
+        clearTimeout(timer);
+        const query = input.value.trim();
+        if (query.length < 3) { seq++; return closeSuggestions(); }
+        timer = setTimeout(() => fetchSuggestions(query), 250);
+      });
+      input.addEventListener('keydown', (e) => {
+        if (list.hidden || !options.length) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); highlight((active + 1) % options.length); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(active <= 0 ? options.length - 1 : active - 1); }
+        else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); chooseSuggestion(options[active]); }
+        else if (e.key === 'Escape') { e.stopPropagation(); closeSuggestions(); }
+      });
+      input.addEventListener('blur', () => setTimeout(closeSuggestions, 150));
+
+      return { setStatus, setValue: (v) => { input.value = v || ''; }, close: closeSuggestions };
     }
 
-    if (addrInput) {
-    addrInput.addEventListener('focus', () => { loadPlaces().catch(() => {}); });
-    addrInput.addEventListener('input', () => {
-      // Any edit after choosing means the fee no longer matches what is shown.
-      if (deliveryAddress) { deliveryAddress = null; updateTotals(); }
-      setAddrStatus('');
-      clearTimeout(addrTimer);
-      const query = addrInput.value.trim();
-      if (query.length < 3) { addrSeq++; return closeSuggestions(); }
-      addrTimer = setTimeout(() => fetchSuggestions(query), 250);
+    // The cart's instance. Choosing an address sets the fee; editing it after
+    // clears the choice, because the fee shown would no longer match.
+    const cartAddress = createAddressField({
+      input:  document.getElementById('c-address'),
+      list:   document.getElementById('addr-suggest'),
+      status: document.getElementById('addr-status'),
+      onChoose: (addr) => { deliveryAddress = addr; updateTotals(); },
+      onEdit:   () => { if (deliveryAddress) { deliveryAddress = null; updateTotals(); } },
     });
-    addrInput.addEventListener('keydown', (e) => {
-      if (addrList.hidden || !addrOptions.length) return;
-      if (e.key === 'ArrowDown') { e.preventDefault(); highlight((addrActive + 1) % addrOptions.length); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(addrActive <= 0 ? addrOptions.length - 1 : addrActive - 1); }
-      else if (e.key === 'Enter' && addrActive >= 0) { e.preventDefault(); chooseSuggestion(addrOptions[addrActive]); }
-      else if (e.key === 'Escape') { e.stopPropagation(); closeSuggestions(); }
-    });
-    addrInput.addEventListener('blur', () => setTimeout(closeSuggestions, 150));
-    }
 
     // ── Checkout ───────────────────────────────────
     function showCartError(msg) {

@@ -79,6 +79,7 @@
 
     <h1 class="account-title">Your Account</h1>
     <p class="account-error" id="acc-error" hidden></p>
+    <p class="account-notice" id="acc-notice" hidden></p>
 
     <section class="account-card" id="acc-step-email">
       <h2 class="account-heading">Sign in or create an account</h2>
@@ -102,12 +103,53 @@
       <button class="account-link" id="acc-back" type="button">Use a different email</button>
     </section>
 
-    <section id="acc-step-orders" hidden>
+    <section id="acc-step-in" hidden>
       <div class="account-bar">
         <p class="account-muted">Signed in as <strong id="acc-who"></strong></p>
         <button class="account-link" id="acc-signout" type="button">Sign out</button>
       </div>
-      <div id="acc-orders"></div>
+
+      <div class="account-tabs" role="tablist">
+        <button class="account-tab active" data-tab="details" type="button" role="tab">Your details</button>
+        <button class="account-tab" data-tab="orders" type="button" role="tab">Orders</button>
+      </div>
+
+      <div id="acc-panel-details">
+        <section class="account-card">
+          <p class="account-lead">Saved here so you don&rsquo;t retype it at checkout. Only your name is required.</p>
+
+          <div class="cart-field">
+            <label for="acc-first">First name</label>
+            <input type="text" id="acc-first" autocomplete="given-name" placeholder="e.g. Naledi" />
+          </div>
+          <div class="cart-field">
+            <label for="acc-last">Surname <span class="cart-label-opt">(optional)</span></label>
+            <input type="text" id="acc-last" autocomplete="family-name" placeholder="e.g. Mokoena" />
+          </div>
+          <div class="cart-field">
+            <label for="acc-phone">Phone <span class="cart-label-opt">(optional)</span></label>
+            <input type="tel" id="acc-phone" autocomplete="tel" placeholder="082 000 0000" />
+          </div>
+          <div class="cart-field" id="acc-cf-address">
+            <label for="acc-address">Delivery address <span class="cart-label-opt">(optional)</span></label>
+            <input type="text" id="acc-address" autocomplete="off" placeholder="Start typing your street address"
+                   role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="acc-addr-suggest" />
+            <ul class="addr-suggest" id="acc-addr-suggest" role="listbox" hidden></ul>
+            <p class="addr-status" id="acc-addr-status" aria-live="polite" hidden></p>
+          </div>
+          <div class="cart-field">
+            <label for="acc-extra">Unit, complex or extra details <span class="cart-label-opt">(optional)</span></label>
+            <input type="text" id="acc-extra" autocomplete="address-line2" placeholder="Unit 4B, Acorn Heights" />
+          </div>
+
+          <button class="btn-primary account-btn" id="acc-save" type="button">Save details</button>
+          <p class="account-muted">Your email is how you sign in, so it can&rsquo;t be changed here yet.</p>
+        </section>
+      </div>
+
+      <div id="acc-panel-orders" hidden>
+        <div id="acc-orders"></div>
+      </div>
     </section>
   </main>
 
