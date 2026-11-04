@@ -1,0 +1,85 @@
+name: Publish site from the database
+
+# Fired by api/publish.js when Paige saves a product in the admin page.
+# workflow_dispatch is kept so it can also be run by hand from the Actions tab,
+# which is the recovery path if a publish ever fails.
+on:
+  repository_dispatch:
+    types: [publish]
+  workflow_dispatch:
+
+# This is the queue Paige asked for. Five saves in a minute do not produce
+# five builds: a run still in progress is cancelled by the next one, so what
+# deploys is one build of the final state. Each run reads the database fresh,
+# so a cancelled run never loses an edit — the edit is already saved.
+concurrency:
+  group: publish-site
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # The default token is read-only in repositories that have tightened the
+    # default; without this the commit step fails at the push with a 403.
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the site
+        uses: actions/checkout@v4
+        with:
+          path: site
+
+      # The price list lives in the private backend repo and must be written
+      # in the same pass as products.json, or the two drift and checkout
+      # rejects orders. Needs a token with access to both repositories.
+      - name: Check out the backend
+        uses: actions/checkout@v4
+        with:
+          repository: fireandfaye/fireandfaye-yoco-backend
+          token: ${{ secrets.PUBLISH_TOKEN }}
+          path: backend
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Read the database into the site
+        working-directory: site
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BACKEND_PRODUCTS_JS: ${{ github.workspace }}/backend/products.js
+        run: python3 publish-from-db.py
+
+      - name: Regenerate the pages
+        working-directory: site
+        run: python3 build.py
+
+      - name: Commit the site
+        working-directory: site
+        run: |
+          git config user.name  "fire&faye admin"
+          git config user.email "noreply@fireandfaye.co.za"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing changed on the site."
+          else
+            git commit -m "Publish: products updated from the admin page"
+            git push
+          fi
+
+      # Pushed second and separately: the site and the backend are different
+      # repos with different deploys, so there is always a window where one is
+      # ahead. The cart's price-mismatch check is what makes that window safe.
+      - name: Commit the price list
+        working-directory: backend
+        run: |
+          git config user.name  "fire&faye admin"
+          git config user.email "noreply@fireandfaye.co.za"
+          git add products.js
+          if git diff --cached --quiet; then
+            echo "Prices unchanged."
+          else
+            git commit -m "Publish: price list updated from the admin page"
+            git push
+          fi
