@@ -207,9 +207,14 @@ def main():
         f"{{ name: {json.dumps(p['name'], ensure_ascii=False)}, "
         f"priceCents: {round(float(p['price'][1:]) * 100)} }},"
         for p in final)
-    new = re.sub(r'const PRODUCTS = \{.*?\n\};',
-                 'const PRODUCTS = {\n' + lines + '\n};', src, flags=re.S)
-    assert new != src, "could not find the PRODUCTS block in the backend"
+    # Assert on the pattern, not on whether the text changed. An import that
+    # only touches descriptions regenerates a byte-identical price list, and
+    # `new != src` would call that a failure — after products.json had already
+    # been written, which is the one state this script must never leave behind.
+    pattern = r'const PRODUCTS = \{.*?\n\};'
+    assert re.search(pattern, src, flags=re.S), \
+        "could not find the PRODUCTS block in the backend"
+    new = re.sub(pattern, 'const PRODUCTS = {\n' + lines + '\n};', src, flags=re.S)
     open(BACKEND, 'w', encoding='utf-8').write(new)
 
     print(f"  wrote products.json ({len(final)} products)")

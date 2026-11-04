@@ -47,6 +47,7 @@ CATEGORY_BLURB = {
     "necklaces": "Handmade gemstone necklaces on 18K gold-plated stainless steel, made one piece at a time in South Africa.",
     "earrings":  "Handmade gemstone earrings on 18K gold-plated stainless steel, made one piece at a time in South Africa.",
     "bracelets": "Handmade gemstone bracelets on 18K gold-plated stainless steel, made one piece at a time in South Africa.",
+    "rings":     "Handmade gemstone rings on 18K gold-plated stainless steel, made one piece at a time in South Africa.",
 }
 
 
@@ -242,7 +243,7 @@ def product_page(p, nav, footer):
         <p class="pdp-eyebrow"><a href="/{p['category']}/">{label}</a></p>
         <h1 class="pdp-name">{html.escape(p['name'])}</h1>
         <p class="pdp-price">{p['price']}</p>
-        <p class="pdp-desc">{html.escape(desc_short)}</p>
+        <p class="pdp-desc">{html.escape(p["desc"])}</p>
         <button class="btn-primary pdp-add" id="pdp-add" type="button" data-id="{p['id']}">Add to Cart</button>
         <p class="pdp-note">Free delivery on orders over <span data-fee="free-min">R399</span> · Courier, 2&ndash;5 working days</p>
       </div>
@@ -261,10 +262,13 @@ def product_page(p, nav, footer):
 def category_page(slug, products, nav, footer):
     label = CATEGORY_LABELS[slug]
     url = f"{SITE}/{slug}/"
-    empty = slug in EMPTY_CATEGORIES
+    # Empty is a fact about the data, not a name on a list. A category listed in
+    # EMPTY_CATEGORIES that has since gained a product must stop saying "coming
+    # soon" and stop being noindex'd, or the product is invisible to Google.
+    empty = not products
 
     if empty:
-        desc = EMPTY_CATEGORIES[slug][1]
+        desc = EMPTY_CATEGORIES.get(slug, (label, f"{label} are on their way."))[1]
         body = f'      <div class="grid-empty"><h3>Coming Soon</h3><p>{html.escape(desc)}</p></div>'
         extra = ""
     else:
@@ -493,10 +497,164 @@ def account_page(nav, footer):
     )
 
 
+def admin_page(nav, footer):
+    """Paige's admin: every order, every member. noindex, and deliberately not
+    linked from the nav — but what actually keeps it shut is the row-level
+    security policy in supabase-admin.sql, not its absence from the menu."""
+    return (
+        head("Admin | " + BRAND,
+             "fire&amp;faye admin.",
+             SITE + "/admin/", SITE + "/og-image.jpg", noindex=True)
+        + nav + """
+
+  <main class="admin" id="admin">
+    <h1 class="account-title">Admin</h1>
+    <p class="account-error" id="adm-error" hidden></p>
+    <p class="account-notice" id="adm-notice" hidden></p>
+
+    <section class="account-card" id="adm-step-email">
+      <h2 class="account-heading">Sign in</h2>
+      <p class="account-lead">Enter your email and we&rsquo;ll send you a six-digit code &mdash; the same way you sign in to your account.</p>
+      <div class="cart-field">
+        <label for="adm-email">Email address</label>
+        <input type="email" id="adm-email" autocomplete="email" placeholder="you@example.com" />
+      </div>
+      <button class="btn-primary account-btn" id="adm-send" type="button">Email me a code</button>
+    </section>
+
+    <section class="account-card" id="adm-step-code" hidden>
+      <h2 class="account-heading">Check your email</h2>
+      <p class="account-lead">We&rsquo;ve sent a six-digit code to <strong id="adm-sent-to"></strong>. It expires in 60 minutes.</p>
+      <div class="cart-field">
+        <label for="adm-code">Six-digit code</label>
+        <input type="text" id="adm-code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" />
+      </div>
+      <button class="btn-primary account-btn" id="adm-verify" type="button">Sign in</button>
+      <button class="account-link" id="adm-back" type="button">Use a different email</button>
+    </section>
+
+    <section class="account-card" id="adm-denied" hidden>
+      <h2 class="account-heading">No admin access</h2>
+      <p class="account-lead">This account isn&rsquo;t an admin. If that&rsquo;s wrong, the account has to be added in Supabase &mdash; it can&rsquo;t be granted from this page.</p>
+      <p class="account-muted"><a class="account-link" href="/account/">Go to your account</a></p>
+    </section>
+
+    <section id="adm-step-in" hidden>
+      <div class="account-bar">
+        <p class="account-muted">Signed in as <strong id="adm-who"></strong></p>
+        <button class="account-link" id="adm-signout" type="button">Sign out</button>
+      </div>
+
+      <div class="account-tabs" role="tablist">
+        <button class="account-tab admin-tab active" data-tab="products" type="button">Products</button>
+        <button class="account-tab admin-tab" data-tab="orders" type="button">Orders</button>
+        <button class="account-tab admin-tab" data-tab="members" type="button">Members</button>
+      </div>
+
+      <div id="adm-panel-products">
+        <div class="admin-filters">
+          <select id="adm-prod-cat" aria-label="Filter by category">
+            <option value="all">All categories</option>
+            <option value="necklaces">Necklaces</option>
+            <option value="earrings">Earrings</option>
+            <option value="bracelets">Bracelets</option>
+            <option value="rings">Rings</option>
+          </select>
+          <input type="search" id="adm-prod-search" placeholder="Search products" aria-label="Search products" />
+        </div>
+        <p class="admin-summary" id="adm-prod-summary"></p>
+        <div id="adm-products"></div>
+
+        <!-- The editor replaces the list rather than sitting beside it: on a
+             phone there is no room for both, and Paige edits one at a time. -->
+        <div id="adm-editor" hidden>
+          <button class="account-link" id="adm-edit-back" type="button">&larr; All products</button>
+          <h2 class="account-heading" id="adm-edit-title"></h2>
+
+          <div class="cart-field">
+            <label for="adm-f-name">Product name</label>
+            <input type="text" id="adm-f-name" />
+          </div>
+          <div class="admin-field-row">
+            <div class="cart-field">
+              <label for="adm-f-cat">Category</label>
+              <select id="adm-f-cat">
+                <option value="necklaces">Necklaces</option>
+                <option value="earrings">Earrings</option>
+                <option value="bracelets">Bracelets</option>
+                <option value="rings">Rings</option>
+              </select>
+            </div>
+            <div class="cart-field">
+              <label for="adm-f-price">Price (R)</label>
+              <input type="text" id="adm-f-price" inputmode="decimal" placeholder="259.00" />
+            </div>
+            <div class="cart-field">
+              <label for="adm-f-qty">Quantity you can make <span class="cart-label-opt">(optional)</span></label>
+              <input type="text" id="adm-f-qty" inputmode="numeric" placeholder="3" />
+            </div>
+          </div>
+          <div class="cart-field">
+            <label for="adm-f-desc">Description</label>
+            <textarea id="adm-f-desc" rows="10"></textarea>
+            <p class="account-muted">First line: the stones and what they mean, separated by &bull;. Then a blank line, the description, another blank line, and a line starting <strong>Details:</strong> with the materials.</p>
+          </div>
+
+          <h3 class="admin-subheading">Photos</h3>
+          <p class="account-muted">The first photo is the one shown on the category page. Drag is not supported yet &mdash; use the arrows.</p>
+          <div id="adm-photos" class="admin-photos"></div>
+          <label class="account-link admin-upload" for="adm-f-photo">+ Add photos</label>
+          <input type="file" id="adm-f-photo" accept="image/*" multiple hidden />
+          <p class="admin-summary" id="adm-photo-status"></p>
+
+          <label class="admin-check">
+            <input type="checkbox" id="adm-f-listed" /> Show this product on the site
+          </label>
+
+          <button class="btn-primary account-btn" id="adm-save" type="button">Save and publish</button>
+          <p class="account-muted" id="adm-save-status"></p>
+        </div>
+      </div>
+
+      <div id="adm-panel-orders">
+        <div class="admin-filters">
+          <select id="adm-status" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <input type="search" id="adm-search" placeholder="Search name, email or item" aria-label="Search orders" />
+        </div>
+        <p class="admin-summary" id="adm-orders-summary"></p>
+        <div id="adm-orders"></div>
+      </div>
+
+      <div id="adm-panel-members" hidden>
+        <p class="admin-summary" id="adm-members-summary"></p>
+        <div id="adm-members"></div>
+      </div>
+    </section>
+  </main>
+
+"""
+        + footer + "\n\n"
+        + '  <script src="/products.js"></script>\n'
+        + '  <script src="/app.js"></script>\n'
+        + '  <script src="/admin.js"></script>\n\n'
+        + "</body>\n</html>\n"
+    )
+
+
 def sitemap(products):
     today = date.today().isoformat()
     urls = [(SITE + "/", "1.0")]
-    urls += [(f"{SITE}/{c}/", "0.8") for c in ("necklaces", "earrings", "bracelets")]
+    # Driven by the products, so a newly populated category is never left out.
+    # Empty categories stay out: they are noindex'd, and a sitemap entry for a
+    # noindex page is a contradiction Search Console reports as an error.
+    cats = dict.fromkeys(p["category"] for p in products)
+    urls += [(f"{SITE}/{c}/", "0.8") for c in cats]
     urls += [(f"{SITE}/{p['category']}/{p['id']}/", "0.7") for p in products]
     body = "\n".join(
         f"  <url>\n    <loc>{u}</loc>\n    <lastmod>{today}</lastmod>\n"
@@ -520,7 +678,10 @@ def main():
     for p in products:
         by_cat.setdefault(p["category"], []).append(p)
 
-    for slug in list(by_cat) + list(EMPTY_CATEGORIES):
+    # dict.fromkeys, not a list concat: a category that is both populated and
+    # listed as empty would otherwise be built twice, the placeholder landing
+    # second and overwriting the real page.
+    for slug in dict.fromkeys(list(by_cat) + list(EMPTY_CATEGORIES)):
         items = by_cat.get(slug, [])
         os.makedirs(slug, exist_ok=True)
         path = f"{slug}/index.html"
@@ -540,6 +701,11 @@ def main():
     os.makedirs("account", exist_ok=True)
     open("account/index.html", "w", encoding="utf-8").write(account_page(nav, footer))
     written.append("account/index.html")
+
+    # Not in the sitemap and noindex'd: it is Paige's, not a page to rank.
+    os.makedirs("admin", exist_ok=True)
+    open("admin/index.html", "w", encoding="utf-8").write(admin_page(nav, footer))
+    written.append("admin/index.html")
 
     open("sitemap.xml", "w", encoding="utf-8").write(sitemap(products))
     written.append("sitemap.xml")
