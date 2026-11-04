@@ -11,9 +11,8 @@
 // The address field is createAddressField() from app.js — the same one the
 // cart uses, so a fix to address handling cannot land in one and not the other.
 
-const SUPABASE_URL = 'https://wscfombaipghblbudeyp.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_v2UNHfrEEbCL13GhshgQuQ_rmG0Xj9k';
-const SESSION_KEY  = 'ff_session';
+// SUPABASE_URL, the session helpers and supaApi() live in app.js, which
+// loads first — the cart needs them too, for the checkout prefill.
 
 const accountRoot = document.getElementById('account');
 if (accountRoot) {
@@ -39,64 +38,10 @@ if (accountRoot) {
   let pendingEmail = '';
   let chosenAddress = null;   // set by the autocomplete, cleared on edit
 
-  // ── session ────────────────────────────────────
-  const load = () => { try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { return null; } };
-  const save = (s) => { try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {} };
-  const clear = () => { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} };
-
-  // The user id lives in the access token's `sub` claim. Reading it from there
-  // rather than from stored session state means a session saved by an older
-  // version of this file — which did not store it — still works.
-  function userIdOf(session) {
-    if (session && session.user_id) return session.user_id;
-    try {
-      const payload = session.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(atob(payload + '==='.slice((payload.length + 3) % 4))).sub || null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // ── Supabase ───────────────────────────────────
-  async function auth(path, body) {
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.msg || data.error_description || data.message || 'Something went wrong.');
-    return data;
-  }
-
-  async function refreshSession(s) {
-    const d = await auth('token?grant_type=refresh_token', { refresh_token: s.refresh_token });
-    const next = { access_token: d.access_token, refresh_token: d.refresh_token,
-                   email: s.email, user_id: s.user_id || (d.user && d.user.id) };
-    save(next);
-    return next;
-  }
-
-  // One retry after refreshing: an access token lasts an hour and people come
-  // back days later. The retry cannot itself retry, or a persistently rejecting
-  // endpoint would recurse forever.
-  async function api(session, path, opts = {}, allowRetry = true) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      ...opts,
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-        ...(opts.headers || {}),
-      },
-    });
-    if (r.status === 401 && allowRetry && session.refresh_token) {
-      return api(await refreshSession(session), path, opts, false);
-    }
-    if (!r.ok) throw new Error(await r.text());
-    const text = await r.text();
-    return text ? JSON.parse(text) : null;
-  }
+  // session + API helpers come from app.js
+  const load = loadSession, save = saveSession, clear = clearSession;
+  const auth = supaAuth;
+  const api  = supaApi;
 
   // ── rendering ──────────────────────────────────
   const showError  = (m) => { errorEl.textContent = m || ''; errorEl.hidden = !m; };
@@ -271,7 +216,14 @@ if (accountRoot) {
   sendBtn.addEventListener('click', sendCode);
   verifyBtn.addEventListener('click', verifyCode);
   backBtn.addEventListener('click', () => { showError(''); show('email'); });
-  signOutBtn.addEventListener('click', () => { clear(); showError(''); showNotice(''); show('email'); });
+  signOutBtn.addEventListener('click', () => {
+    clear();
+    showError('');
+    // Confirm before leaving, so it is clear something happened rather than
+    // the page simply changing underneath them.
+    showNotice('You\u2019ve been signed out.');
+    setTimeout(() => { window.location.href = '/'; }, 1200);
+  });
   emailInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendCode(); });
   codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') verifyCode(); });
 
