@@ -692,11 +692,7 @@
     async function prefillFromProfile() {
       if (!cartLines) return;                       // not the cart page
       const session = loadSession();
-      if (!session || !session.access_token) {
-        console.debug('[prefill] not signed in — nothing to fill');
-        return;
-      }
-      console.debug('[prefill] signed in as', session.email);
+      if (!session || !session.access_token) return;
 
       const fill = (id, value) => {
         const el = document.getElementById(id);
@@ -706,10 +702,7 @@
       fill('c-email', session.email);
 
       const uid = userIdOf(session);
-      if (!uid) {
-        console.warn('[prefill] no user id in the session token');
-        return;
-      }
+      if (!uid) return;
 
       let profile = null;
       try {
@@ -722,11 +715,7 @@
         console.error('Could not prefill from your profile:', err);
         return;
       }
-      if (!profile) {
-        console.warn('[prefill] signed in, but no profile row for', uid);
-        return;
-      }
-      console.debug('[prefill] profile loaded', profile);
+      if (!profile) return;
 
       fill('c-name', [profile.first_name, profile.last_name].filter(Boolean).join(' '));
       fill('c-phone', profile.phone);
