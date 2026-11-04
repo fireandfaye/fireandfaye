@@ -2102,3 +2102,27 @@
     /* The address suggestions drop out of the field, which needs a positioning
        context — the cart gets this from .cart-panel, the account page does not. */
     .account #acc-cf-address { position: relative; }
+
+    /* Once the piece is in the cart the button's job changes, so it should not
+       keep looking like the gold "add" call to action. */
+    .pdp-add.go {
+      background: var(--espresso);
+      color: var(--moonstone);
+    }
+    .pdp-add.go:hover { opacity: 0.9; }
+
+    /* Delivery is the only method since collection was removed, so the row
+       states a fact rather than offering a choice — no radio, no pointer. */
+    .ship-opt-only { cursor: default; }
+
+    /* Cart lines link back to the product. The name has to re-assert its own
+       colour and weight because the global `a` reset is not enough here. */
+    .cart-thumb-link { display: block; flex-shrink: 0; }
+    a.cart-line-name {
+      display: block;
+      color: var(--espresso);
+      transition: color 0.2s ease;
+    }
+    a.cart-line-name:hover { color: var(--gold-deep); }
+    .cart-thumb-link:hover .cart-thumb { opacity: 0.85; }
+    .cart-thumb { transition: opacity 0.2s ease; }

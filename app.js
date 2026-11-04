@@ -60,6 +60,78 @@
       });
     }
 
+    // ── Supabase session, shared ───────────────────
+    // Lives here rather than in account.js because the cart needs it too, to
+    // prefill a signed-in customer's details. One session implementation.
+    //
+    // The publishable key is meant to be in page source; what protects the
+    // data is the row-level security policy, not the key.
+    const SUPABASE_URL = 'https://wscfombaipghblbudeyp.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_v2UNHfrEEbCL13GhshgQuQ_rmG0Xj9k';
+    const SESSION_KEY  = 'ff_session';
+
+    // localStorage throws in private mode and with site data blocked, so every
+    // access is guarded — a page must still work, just signed out.
+    function loadSession() {
+      try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { return null; }
+    }
+    function saveSession(s) {
+      try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {}
+    }
+    function clearSession() {
+      try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+    }
+
+    // The user id is in the access token's `sub` claim. Reading it from there
+    // rather than from stored state means a session saved by an older version
+    // of the site still works.
+    function userIdOf(session) {
+      if (session && session.user_id) return session.user_id;
+      try {
+        const payload = session.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(payload + '==='.slice((payload.length + 3) % 4))).sub || null;
+      } catch (e) { return null; }
+    }
+
+    async function supaAuth(path, body) {
+      const r = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.msg || data.error_description || data.message || 'Something went wrong.');
+      return data;
+    }
+
+    async function refreshSession(s) {
+      const d = await supaAuth('token?grant_type=refresh_token', { refresh_token: s.refresh_token });
+      const next = { access_token: d.access_token, refresh_token: d.refresh_token,
+                     email: s.email, user_id: s.user_id || (d.user && d.user.id) };
+      saveSession(next);
+      return next;
+    }
+
+    // One retry after refreshing. The retry cannot itself retry, or a
+    // persistently rejecting endpoint would recurse forever.
+    async function supaApi(session, path, opts = {}, allowRetry = true) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+        ...opts,
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          ...(opts.headers || {}),
+        },
+      });
+      if (r.status === 401 && allowRetry && session.refresh_token) {
+        return supaApi(await refreshSession(session), path, opts, false);
+      }
+      if (!r.ok) throw new Error(await r.text());
+      const text = await r.text();
+      return text ? JSON.parse(text) : null;
+    }
+
     // ── Cart ──────────────────────────────────────
     // Prices shown here are for display only. The real total is recalculated
     // server-side in create-yoco-checkout from products.js, so editing these
@@ -124,10 +196,10 @@
 
     const cartCount    = () => cart.reduce((n, l) => n + l.qty, 0);
     const subtotalCents = () => cart.reduce((n, l) => n + centsOf(productById(l.id)) * l.qty, 0);
-    const shippingMethod = () => {
-      const picked = document.querySelector('input[name="shipping"]:checked');
-      return picked ? picked.value : 'delivery';
-    };
+    // Delivery is the only method since collection was removed, so there is
+    // nothing to read. Still sent to the backend, which validates it — if
+    // collection ever returns, this goes back to reading the chosen option.
+    const shippingMethod = () => 'delivery';
 
     function addToCart(id, qty) {
       const line = cart.find(l => l.id === id);
@@ -180,9 +252,11 @@
         const row = document.createElement('div');
         row.className = 'cart-line';
         row.innerHTML = `
-          <img class="cart-thumb" src="${p.images[0]}" alt="" />
+          <a class="cart-thumb-link" href="/${p.category}/${p.id}/" aria-label="${p.name}">
+            <img class="cart-thumb" src="${p.images[0]}" alt="" />
+          </a>
           <div>
-            <div class="cart-line-name">${p.name}</div>
+            <a class="cart-line-name" href="/${p.category}/${p.id}/">${p.name}</a>
             <div class="cart-line-price">${p.price} each</div>
             <div class="qty">
               <button type="button" data-act="dec" aria-label="Decrease quantity">&minus;</button>
@@ -245,10 +319,6 @@
 
     if (cartLines) document.getElementById('delivery-note').textContent =
       `Courier, 2\u20135 working days \u00b7 Gauteng R${DELIVERY_CENTS.gauteng / 100}, elsewhere R${DELIVERY_CENTS.elsewhere / 100}`;
-
-    document.querySelectorAll('input[name="shipping"]').forEach(radio => {
-      radio.addEventListener('change', () => { showCartError(''); updateTotals(); });
-    });
 
     // ── Address autocomplete (Google Places) ──────
     // The customer picks their address from Google's suggestions; its province
@@ -504,6 +574,34 @@
           return;
         }
 
+        // The backend recalculates the total from its own price list and wins.
+        // The site and the backend deploy separately, so for a short window
+        // after a price change one can be ahead of the other — and a customer
+        // could be sent to Yoco at a price they were never shown. Compare what
+        // the backend worked out against what is on screen, and stop if they
+        // disagree rather than letting it through silently.
+        const shownSubtotal = subtotalCents();
+        const freeShipping  = shownSubtotal >= FREE_SHIPPING_MIN_CENTS;
+        const shownShipping = freeShipping ? 0
+          : (deliveryAddress ? deliveryCentsFor(deliveryAddress.province) : null);
+        const shownTotal    = shownSubtotal + (shownShipping || 0);
+        const asCents = (rands) => Math.round(Number(rands) * 100);
+
+        if (shownShipping === null ||
+            asCents(data.subtotal) !== shownSubtotal ||
+            asCents(data.shipping) !== shownShipping ||
+            asCents(data.total)    !== shownTotal) {
+          console.error('Checkout total did not match what was shown:', {
+            shown: { subtotal: shownSubtotal, shipping: shownShipping, total: shownTotal },
+            backend: data,
+          });
+          showCartError('Our prices have just changed. Please review your order and try again.');
+          // Repricing the cart from the data we have would only show the old
+          // figures again; a reload picks up whichever version is now live.
+          setTimeout(() => window.location.reload(), 2500);
+          return;
+        }
+
         // Remember the checkout so the return can be verified with Yoco.
         // Cart is cleared on return, not here: if they abandon the Yoco page
         // their basket should still be waiting for them.
@@ -584,6 +682,61 @@
         .catch(err => console.error('Could not confirm payment:', err));
     }
 
+    // ── Prefill the cart from a signed-in customer's profile ──
+    // Only fills fields the customer has not already typed into, so a stale
+    // saved value never overwrites a deliberate change.
+    //
+    // Setting deliveryAddress here makes the fee appear without retyping the
+    // address. Safe, because the backend looks the place id up again before
+    // charging — nothing here decides what is actually charged.
+    async function prefillFromProfile() {
+      if (!cartLines) return;                       // not the cart page
+      const session = loadSession();
+      if (!session || !session.access_token) return;
+
+      const fill = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && !el.value.trim() && value) el.value = value;
+      };
+
+      fill('c-email', session.email);
+
+      const uid = userIdOf(session);
+      if (!uid) return;
+
+      let profile = null;
+      try {
+        const rows = await supaApi(session, `profiles?id=eq.${uid}&select=*`);
+        profile = rows && rows[0];
+      } catch (err) {
+        // Signed in but the profile could not be read — expired session, or
+        // Supabase asleep on the free tier. Checkout still works by hand, so
+        // this must never surface as an error to the customer.
+        console.error('Could not prefill from your profile:', err);
+        return;
+      }
+      if (!profile) return;
+
+      fill('c-name', [profile.first_name, profile.last_name].filter(Boolean).join(' '));
+      fill('c-phone', profile.phone);
+      fill('c-address2', profile.address_extra);
+
+      // Don't clobber an address already chosen in this session.
+      if (profile.place_id && !deliveryAddress) {
+        deliveryAddress = {
+          placeId: profile.place_id,
+          formattedAddress: profile.address,
+          province: profile.province,
+          // Not stored on the profile. The street-number nudge is for the
+          // moment of choosing; a saved address has been through it already.
+          hasStreetNumber: true,
+        };
+        if (cartAddress) cartAddress.setValue(profile.address);
+        updateTotals();
+      }
+    }
+    prefillFromProfile();
+
     // ── Empty cart: say so under the nav button, don't navigate ──
     const cartPopover = document.getElementById('cart-popover');
     let popoverTimer = null;
@@ -609,19 +762,36 @@
     }
 
     // ── Add to cart, from a product page ───────────
+    // Once a piece is in the cart the button becomes "Go to cart" rather than
+    // reverting to "Add to Cart" — otherwise the obvious next click adds a
+    // second one, when the customer wants to go and check out. Quantity is
+    // adjusted in the cart, which is the only place it is editable.
     let addedTimer = null;
     const pdpAdd = document.getElementById('pdp-add');
     if (pdpAdd) {
+      const productId = pdpAdd.getAttribute('data-id');
+
+      function showGoToCart() {
+        pdpAdd.textContent = 'Go to cart';
+        pdpAdd.classList.remove('added');
+        pdpAdd.classList.add('go');
+      }
+
       pdpAdd.addEventListener('click', () => {
-        addToCart(pdpAdd.getAttribute('data-id'), 1);
+        if (pdpAdd.classList.contains('go')) {
+          window.location.href = '/cart/';
+          return;
+        }
+        addToCart(productId, 1);
         pdpAdd.textContent = 'Added to cart \u2713';
         pdpAdd.classList.add('added');
         clearTimeout(addedTimer);
-        addedTimer = setTimeout(() => {
-          pdpAdd.textContent = 'Add to Cart';
-          pdpAdd.classList.remove('added');
-        }, 2000);
+        addedTimer = setTimeout(showGoToCart, 1400);
       });
+
+      // Returning to a page for something already in the cart should not
+      // offer to add it again.
+      if (cart.some(line => line.id === productId)) showGoToCart();
     }
 
     renderCart();
