@@ -79,20 +79,23 @@
     }
     .nav-links a:hover { color: var(--gold-deep); }
     .nav-insta {
+      display: flex;
+      align-items: center;
+      color: var(--text-soft);
+      transition: color 0.25s;
+    }
+    .nav-insta svg { width: 18px; height: 18px; display: block; }
+    .nav-insta:hover { color: var(--gold-deep); }
+    /* Account + Cart on the right: same type as the main nav links. */
+    .nav-text-link {
       font-family: 'Montserrat', sans-serif;
       font-size: 0.7rem;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
       color: var(--text-soft);
-      border: 1px solid var(--line-strong);
-      padding: 0.45rem 1.1rem;
-      border-radius: 1px;
-      transition: all 0.25s;
+      transition: color 0.2s;
     }
-    .nav-insta:hover {
-      color: var(--gold-deep);
-      border-color: var(--gold-deep);
-      background: var(--gold-dim);
-    }
+    .nav-text-link:hover { color: var(--gold-deep); }
 
     /* ── HERO ───────────────────────────────────── */
     .hero {
@@ -377,8 +380,11 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 2px;
-      background: var(--ivory);
     }
+    /* The divider lines come from each card, not the grid background, so an
+       unfilled last row shows the page, not an empty ivory block. The 1px
+       shadows of neighbouring cards meet in the 2px gap. */
+    .grid > .card { box-shadow: 0 0 0 1px var(--ivory); }
     .card {
       background: var(--white);
       position: relative;
@@ -461,7 +467,7 @@
 
     /* ── PRODUCT CARDS (real photos, clickable teasers) ── */
     .card-photo {
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 3 / 4; /* same shape as every product photo, so nothing is cropped */
       width: 100%;
       height: auto;
       object-fit: cover;
@@ -474,7 +480,11 @@
       background: var(--ivory);
     }
     .card:hover .card-photo { transform: scale(1.04); }
-    .card-product {
+    /* Category pages (build.py) render photo cards without .card-product, so
+       the base .card 3:4 lock squeezed the photo. Any card with a photo sizes
+       to its photo instead. */
+    .card-product,
+    .card:has(> .card-photo-wrap) {
       aspect-ratio: auto;
       display: flex;
       flex-direction: column;
@@ -560,7 +570,7 @@
     .nav-dropdown-menu li a:hover { color: var(--gold-deep); background: var(--gold-dim); }
 
     /* ── NAV: ACTIONS ────────────────────────────── */
-    .nav-actions { display: flex; align-items: center; gap: 1.3rem; }
+    .nav-actions { display: flex; align-items: center; gap: 2rem; }
 
     /* ── COLLECTION GRID: EMPTY / COMING SOON STATE ── */
     .grid-empty {
@@ -1075,7 +1085,7 @@
       border: none;
       padding: 0;
       cursor: pointer;
-      color: var(--espresso);
+      color: var(--text-soft);
       display: flex;
       align-items: center;
       transition: color 0.25s;
@@ -1098,6 +1108,8 @@
       text-align: center;
     }
     .nav-cart-count[hidden] { display: none; }
+    /* Clear of the "T" now the toggle is text, not an icon. */
+    .nav-cart-toggle.nav-text-link .nav-cart-count { top: -11px; right: -17px; }
 
     .cart-overlay {
       position: fixed;

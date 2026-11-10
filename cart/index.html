@@ -50,16 +50,12 @@
       <li><a href="/#story">Our Story</a></li>
       <li><a href="/#spirit-world">Spirit World</a></li>
       <li><a href="/#enquire">Enquire</a></li>
-      <li><a href="/account/">Account</a></li>
     </ul>
     <div class="nav-actions">
+      <a class="nav-text-link" href="/account/">Account</a>
       <div class="nav-cart-wrap">
-      <a class="nav-cart-toggle" id="nav-cart-toggle" href="/cart/" aria-label="Your cart, empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 2 L3 6 v14 a1 1 0 0 0 1 1 h16 a1 1 0 0 0 1 -1 V6 l-3 -4 z"></path>
-          <path d="M3 6 h18"></path>
-          <path d="M16 10 a4 4 0 0 1 -8 0"></path>
-        </svg>
+      <a class="nav-cart-toggle nav-text-link" id="nav-cart-toggle" href="/cart/" aria-label="Your cart, empty">
+        Cart
         <span class="nav-cart-count" id="cart-count" hidden>0</span>
       </a>
         <div class="cart-popover" id="cart-popover" role="status" aria-live="polite">
@@ -67,7 +63,13 @@
           <span>Add a piece to get started.</span>
         </div>
       </div>
-      <a class="nav-insta" href="https://instagram.com/fireandfaye" target="_blank" rel="noopener">@fireandfaye</a>
+      <a class="nav-insta" href="https://instagram.com/fireandfaye" target="_blank" rel="noopener" aria-label="fire&amp;faye on Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+          <circle cx="12" cy="12" r="4"></circle>
+          <circle cx="17.5" cy="6.5" r="0.6" fill="currentColor"></circle>
+        </svg>
+      </a>
       <button class="nav-burger" id="nav-burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
         <span></span><span></span><span></span>
       </button>
