@@ -367,6 +367,17 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "dew-drop-bracelet",
+    "name": "Dew Drop Bracelet",
+    "price": "R26900.00",
+    "category": "necklaces",
+    "desc": "A delicate gold bracelet featuring alternating teardrop and round-cut sparkling stones, beautifully arranged along a fine chain. With its soft, graceful design and subtle sparkle, it’s an effortlessly elegant piece that adds a touch of glamour to any look.\n\nDetails: Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/dew-drop-bracelet-1.jpg",
+      "/images/products/dew-drop-bracelet-2.jpg"
+    ]
+  },
+  {
     "id": "ethereal-statement-necklace",
     "name": "Ethereal Statement Necklace",
     "price": "R279.00",
