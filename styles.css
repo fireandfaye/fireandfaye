@@ -2355,3 +2355,5 @@
       .cart-field label,
       .cart-section-label { font-size: 0.66rem; }
     }
+    /* "+ Add a product" sits at the end of the admin filter row. */
+    .admin-new-btn { margin-left: auto; opacity: 1; animation: none; padding: 0.65rem 1.2rem; }

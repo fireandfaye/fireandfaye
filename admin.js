@@ -240,8 +240,47 @@ if (adminRoot) {
   prodSearch.addEventListener('input', renderProducts);
 
   function openEditor(id) {
-    editing = allProducts.find(p => p.id === id);
-    if (!editing) return;
+    const product = allProducts.find(p => p.id === id);
+    if (product) fillEditor(product);
+  }
+
+  // A new product has no id until it has a name: the id is the web address
+  // (/necklaces/<id>/), made from the name the first time it is needed (the
+  // first photo upload or the first save) and never changed after that.
+  function newProduct() {
+    const cat = prodCat.value === 'all' ? 'necklaces' : prodCat.value;
+    fillEditor({ id: null, name: '', category: cat, price_cents: 0, qty_available: null,
+                 description: '', is_listed: true, product_images: [] });
+    editTitle.textContent = 'New product';
+    f('price').value = '';
+    f('name').focus();
+  }
+  document.getElementById('adm-new').addEventListener('click', newProduct);
+
+  function slugify(name) {
+    return name.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')   // é -> e
+      .replace(/['’]/g, '')                           // Fairy's -> fairys
+      .replace(/&/g, ' and ')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  // The product's id, creating it from the name if it has none yet. null
+  // means there is no usable name.
+  function ensureId() {
+    if (editing.id) return editing.id;
+    const base = slugify(f('name').value.trim());
+    if (!base) return null;
+    const taken = new Set(allProducts.map(p => p.id));
+    let id = base, n = 2;
+    while (taken.has(id)) id = `${base}-${n++}`;
+    editing.id = id;
+    return id;
+  }
+
+  function fillEditor(product) {
+    editing = product;
     editImages = (editing.product_images || []).map(i => ({ ...i }));
     editTitle.textContent = editing.name;
     f('name').value  = editing.name;
@@ -343,11 +382,13 @@ if (adminRoot) {
     const files = Array.from(photoInput.files || []);
     photoInput.value = '';
     if (!files.length || !editing) return;
+    const productId = ensureId();
+    if (!productId) { photoStat.textContent = 'Give the product a name first, then add photos.'; return; }
     photoStat.textContent = `Uploading 0 of ${files.length}…`;
     for (let i = 0; i < files.length; i++) {
       try {
         const blob = await resize(files[i]);
-        const path = `${editing.id}/${Date.now()}-${i}.jpg`;
+        const path = `${productId}/${Date.now()}-${i}.jpg`;
         const r = await fetch(`${SUPABASE_URL}/storage/v1/object/product-photos/${path}`, {
           method: 'POST',
           headers: { apikey: SUPABASE_KEY, 'Content-Type': 'image/jpeg',
@@ -383,7 +424,7 @@ if (adminRoot) {
       await supaApi(adminSession, 'rpc/admin_save_product', {
         method: 'POST',
         body: JSON.stringify({
-          p_id: editing.id,
+          p_id: ensureId(),
           p_name: f('name').value.trim(),
           p_category: f('cat').value,
           p_description: f('desc').value.trim(),
