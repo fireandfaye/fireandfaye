@@ -139,16 +139,16 @@
     const CHECKOUT_ENDPOINT = 'https://fireandfaye-yoco-backend.vercel.app/api/create-yoco-checkout';
     const CONFIRM_ENDPOINT  = 'https://fireandfaye-yoco-backend.vercel.app/api/confirm-order';
     const PENDING_KEY = 'ff-pending-checkout';
-    // Delivery fees. Keep in step with DELIVERY_CENTS and FREE_SHIPPING_MIN_CENTS
+    // Shipping fee. Keep in step with SHIPPING_CENTS and FREE_SHIPPING_MIN_CENTS
     // in the backend's products.js: these are only what the customer is shown,
-    // the backend's values are what gets charged. The rate is decided by the
-    // province of the address picked from Google's suggestions, never chosen.
-    const DELIVERY_CENTS = { gauteng: 7500, elsewhere: 9500 };
-    const FREE_SHIPPING_MIN_CENTS = 39900;
-    const deliveryCentsFor = (province) => province === 'Gauteng' ? DELIVERY_CENTS.gauteng : DELIVERY_CENTS.elsewhere;
+    // the backend's values are what gets charged. One flat fee anywhere in SA;
+    // the Google address is still required, but only so the courier gets a
+    // real address — it no longer changes the price.
+    const SHIPPING_CENTS = 8500;
+    const FREE_SHIPPING_MIN_CENTS = 49900;
+    const shippingCentsFor = (sub) => sub >= FREE_SHIPPING_MIN_CENTS ? 0 : SHIPPING_CENTS;
     const FEE_TEXT = {
-      'gauteng': DELIVERY_CENTS.gauteng,
-      'elsewhere': DELIVERY_CENTS.elsewhere,
+      'shipping': SHIPPING_CENTS,
       'free-min': FREE_SHIPPING_MIN_CENTS,
     };
     document.querySelectorAll('[data-fee]').forEach(el => {
@@ -286,45 +286,39 @@
     function updateTotals() {
       if (!cartLines) return;
       const sub = subtotalCents();
-      const freeShip = sub >= FREE_SHIPPING_MIN_CENTS;
-      const addrFee = deliveryAddress ? deliveryCentsFor(deliveryAddress.province) : null;
-      // null means there is no address yet to price the delivery from.
-      const ship = freeShip ? 0 : addrFee;
+      const ship = shippingCentsFor(sub);
+      const freeShip = ship === 0;
 
-      const range = `R${DELIVERY_CENTS.gauteng / 100}\u2013R${DELIVERY_CENTS.elsewhere / 100}`;
       document.getElementById('delivery-price').innerHTML = freeShip
-        ? `<s>${addrFee != null ? rands(addrFee) : range}</s>Free`
-        : (addrFee != null ? rands(addrFee) : range);
+        ? `<s>${rands(SHIPPING_CENTS)}</s>Free`
+        : rands(SHIPPING_CENTS);
 
       const freeShipEl = document.getElementById('cart-free-ship');
       freeShipEl.classList.toggle('applied', freeShip);
       if (!freeShip) {
-        freeShipEl.textContent = `Add ${rands(FREE_SHIPPING_MIN_CENTS - sub)} more for free delivery`;
+        freeShipEl.textContent = `Add ${rands(FREE_SHIPPING_MIN_CENTS - sub)} more for free shipping`;
       } else {
-        freeShipEl.textContent = '\u2726 Free delivery applied to your order';
+        freeShipEl.textContent = '\u2726 Free shipping applied to your order';
       }
 
       document.getElementById('cart-subtotal').textContent = rands(sub);
-      document.getElementById('cart-shipping').textContent =
-        ship === null ? 'Add your address' : ship === 0 ? 'Free' : rands(ship);
-      document.getElementById('cart-total').textContent =
-        ship === null ? `${rands(sub)} + delivery` : rands(sub + ship);
+      document.getElementById('cart-shipping').textContent = freeShip ? 'Free' : rands(ship);
+      document.getElementById('cart-total').textContent = rands(sub + ship);
 
       if (deliveryAddress && cartAddress) {
-        const fee = freeShip ? 'free delivery' : `${rands(addrFee)} delivery`;
-        cartAddress.setStatus(`\u2713 ${deliveryAddress.province} address \u00b7 ${fee}` + (deliveryAddress.hasStreetNumber
+        cartAddress.setStatus('\u2713 Address found' + (deliveryAddress.hasStreetNumber
           ? '' : '. No street number found \u2014 please add it in the line below.'));
       }
     }
 
     if (cartLines) document.getElementById('delivery-note').textContent =
-      `Courier, 2\u20135 working days \u00b7 Gauteng R${DELIVERY_CENTS.gauteng / 100}, elsewhere R${DELIVERY_CENTS.elsewhere / 100}`;
+      'Courier, 2\u20135 working days, anywhere in South Africa';
 
     // ── Address autocomplete (Google Places) ──────
-    // The customer picks their address from Google's suggestions; its province
-    // sets the delivery fee. Only the place id is sent to the backend, which
-    // looks the address up again itself before charging, so nothing typed or
-    // edited here can change the fee.
+    // The customer picks their address from Google's suggestions, so the
+    // courier always gets a real, complete address (the fee is flat and does
+    // not depend on it). Only the place id is sent to the backend, which looks
+    // the address up again itself before creating the order.
     //
     // Built as a factory because two pages need it: the cart, and the details
     // form on /account/. One implementation, so a fix to the address handling
@@ -535,7 +529,7 @@
 
       if (!deliveryAddress) {
         flagInvalid('cf-address');
-        return showCartError('Please choose your delivery address from the suggestions list.'), null;
+        return showCartError('Please choose your shipping address from the suggestions list.'), null;
       }
       const placeId = deliveryAddress.placeId;
       const addressExtra = val('c-address2');
@@ -581,9 +575,7 @@
         // the backend worked out against what is on screen, and stop if they
         // disagree rather than letting it through silently.
         const shownSubtotal = subtotalCents();
-        const freeShipping  = shownSubtotal >= FREE_SHIPPING_MIN_CENTS;
-        const shownShipping = freeShipping ? 0
-          : (deliveryAddress ? deliveryCentsFor(deliveryAddress.province) : null);
+        const shownShipping = deliveryAddress ? shippingCentsFor(shownSubtotal) : null;
         const shownTotal    = shownSubtotal + (shownShipping || 0);
         const asCents = (rands) => Math.round(Number(rands) * 100);
 
@@ -795,3 +787,35 @@
     }
 
     renderCart();
+
+    // ── Admin link in the nav ─────────────────────
+    // Shown only when an admin (Paige) is signed in, so she doesn't have to
+    // type /admin. The database decides, through the same is_admin() check the
+    // admin page makes. Hiding the link is a convenience, not security: the
+    // admin data is protected by row-level security whatever the page shows.
+    // The answer is remembered for the browser tab so each page doesn't ask.
+    (async function showAdminLink() {
+      const actions = document.querySelector('.nav-actions');
+      const session = loadSession();
+      if (!actions || !session || !session.access_token) return;
+      const uid = userIdOf(session);
+      const KEY = 'ff_admin_check';
+      let isAdmin = null;
+      try {
+        const c = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+        if (c && c.uid === uid) isAdmin = c.admin;
+      } catch (e) {}
+      if (isAdmin === null) {
+        try {
+          isAdmin = (await supaApi(session, 'rpc/is_admin', { method: 'POST', body: '{}' })) === true;
+        } catch (e) { return; }   // expired or offline: just no link
+        try { sessionStorage.setItem(KEY, JSON.stringify({ uid, admin: isAdmin })); } catch (e) {}
+      }
+      if (!isAdmin || document.getElementById('nav-admin')) return;
+      const link = document.createElement('a');
+      link.id = 'nav-admin';
+      link.className = 'nav-text-link';
+      link.href = '/admin/';
+      link.textContent = 'Admin';
+      actions.insertBefore(link, actions.firstChild);
+    })();

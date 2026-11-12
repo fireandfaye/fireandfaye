@@ -1315,6 +1315,14 @@
       background: var(--gold-dim);
     }
     .cart-free-ship.applied { color: var(--sage-deep); }
+    /* The free-shipping note sits under the Shipping line, inside the same
+       section: the divider moves from between them to below the note. */
+    .ship-opt:has(+ .cart-free-ship) { border-bottom: 0; padding-bottom: 0.6rem; }
+    .ship-opt + .cart-free-ship { margin-bottom: 0; }
+    .ship-opt + .cart-free-ship + .cart-section-label {
+      border-top: 1px solid var(--line);
+      margin-top: 0.9rem;
+    }
 
     .cart-field {
       background: var(--white);
@@ -2309,4 +2317,41 @@
       font-size: 0.88rem;
       color: var(--text-soft);
       margin: 1.5rem 0;
+    }
+
+    /* ── PHONES (12 Nov 2026) ───────────────────────
+       Most visitors are on phones. Kept together at the end so it wins the
+       cascade and is easy to find. */
+    @media (max-width: 680px) {
+      /* 1. Two products per row: one per row made the homepage ~40 screens long. */
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid .card-info { padding: 0.85rem 0.8rem 1rem; }
+      .grid .card-name { font-size: 0.98rem; line-height: 1.3; }
+      .grid .card-price { font-size: 0.92rem; }
+      .grid .card-view-hint { margin-top: 0.55rem; }
+      .grid .card-corner { top: 0.6rem; right: 0.6rem; width: 16px; height: 16px; }
+
+      /* 2. iOS zooms the page into any field under 16px; this stops it. */
+      input, select, textarea { font-size: 16px !important; }
+
+      /* 3. Bigger tap areas without changing the look: an invisible
+         ::after grows each small link to roughly 44px tall. */
+      .nav-text-link, .nav-burger, .breadcrumb a { position: relative; }
+      .nav-text-link::after, .nav-burger::after, .breadcrumb a::after {
+        content: '';
+        position: absolute;
+        inset: -12px -8px;
+      }
+      .nav-actions { gap: 1.1rem; }   /* room for Admin when Paige is signed in */
+      .footer-links { flex-wrap: wrap; row-gap: 0; }
+      .footer-links a { display: inline-block; padding: 0.9rem 0; }
+
+      /* 4. Smallest labels up to ~11px. */
+      .card-view-hint,
+      .footer-links a,
+      .nav-dropdown-menu li a { font-size: 0.7rem; }
+      .form-field label,
+      .form-field-full label,
+      .cart-field label,
+      .cart-section-label { font-size: 0.66rem; }
     }

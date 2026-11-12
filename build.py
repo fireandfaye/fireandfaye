@@ -245,7 +245,7 @@ def product_page(p, nav, footer):
         <p class="pdp-price">{p['price']}</p>
         <p class="pdp-desc">{html.escape(p["desc"])}</p>
         <button class="btn-primary pdp-add" id="pdp-add" type="button" data-id="{p['id']}">Add to Cart</button>
-        <p class="pdp-note">Free delivery on orders over <span data-fee="free-min">R399</span> · Courier, 2&ndash;5 working days</p>
+        <p class="pdp-note">Free shipping on orders over <span data-fee="free-min">R499</span> · Courier, 2&ndash;5 working days</p>
       </div>
     </div>
   </main>
@@ -339,15 +339,14 @@ def cart_page(nav, footer):
       <div class="cart-page-main" id="cart-checkout" hidden>
         <div id="cart-lines"></div>
 
-        <div class="cart-section-label">Delivery</div>
-        <p class="cart-free-ship" id="cart-free-ship" aria-live="polite"></p>
         <div class="ship-opt ship-opt-only">
           <span class="ship-opt-text">
-            <span class="ship-opt-name">Delivery</span>
+            <span class="ship-opt-name">Shipping</span>
             <span class="ship-opt-note" id="delivery-note">Courier, 2&ndash;5 working days</span>
           </span>
           <span class="ship-opt-price" id="delivery-price"></span>
         </div>
+        <p class="cart-free-ship" id="cart-free-ship" aria-live="polite"></p>
 
         <div class="cart-section-label">Your details</div>
         <div class="cart-field" id="cf-name">
@@ -364,7 +363,7 @@ def cart_page(nav, footer):
         </div>
         <div id="cf-address-group">
           <div class="cart-field" id="cf-address">
-            <label for="c-address">Delivery address</label>
+            <label for="c-address">Shipping address</label>
             <input type="text" id="c-address" autocomplete="off" placeholder="Start typing your street address"
                    role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addr-suggest" />
             <ul class="addr-suggest" id="addr-suggest" role="listbox" hidden></ul>
@@ -466,7 +465,7 @@ def account_page(nav, footer):
             <input type="tel" id="acc-phone" autocomplete="tel" placeholder="082 000 0000" />
           </div>
           <div class="cart-field" id="acc-cf-address">
-            <label for="acc-address">Delivery address <span class="cart-label-opt">(optional)</span></label>
+            <label for="acc-address">Shipping address <span class="cart-label-opt">(optional)</span></label>
             <input type="text" id="acc-address" autocomplete="off" placeholder="Start typing your street address"
                    role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="acc-addr-suggest" />
             <ul class="addr-suggest" id="acc-addr-suggest" role="listbox" hidden></ul>
