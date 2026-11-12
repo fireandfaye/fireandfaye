@@ -192,7 +192,7 @@ const PRODUCTS = [
   {
     "id": "lucky-star-hoops",
     "name": "Lucky Star Huggies",
-    "price": "R15900.00",
+    "price": "R159.00",
     "category": "earrings",
     "desc": "Bold gold star hoops with a smooth, polished finish. A playful everyday statement that adds a little celestial sparkle to any outfit.\n\nDetails: Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
     "images": [
