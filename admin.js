@@ -49,6 +49,33 @@ if (adminRoot) {
   let editing = null;      // the product open in the editor
   let editImages = [];     // its photos, in display order, unsaved
 
+  // supaApi() renews an expired sign-in (they last an hour) and stores the
+  // new one, but only in localStorage: adminSession kept the dead token, and
+  // the old refresh token is used up. So always take the newest one.
+  function liveSession() {
+    const s = loadSession();
+    if (s && s.access_token) adminSession = s;
+    return adminSession;
+  }
+
+  // fetch() with Paige's sign-in, for the calls that do not go through
+  // supaApi() (storage, the publish endpoint). Renews once if the token has
+  // expired — storage answers that with 400/403, not 401.
+  async function authedFetch(url, opts = {}) {
+    const send = (s) => fetch(url, { ...opts,
+      headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + s.access_token } });
+    let s = liveSession();
+    let r = await send(s);
+    if ([400, 401, 403].includes(r.status) && s.refresh_token) {
+      const body = await r.clone().text();
+      if (r.status === 401 || /exp|jwt|token|unauthori/i.test(body)) {
+        s = adminSession = await refreshSession(s);
+        r = await send(s);
+      }
+    }
+    return r;
+  }
+
   const showError  = (m) => { errorEl.textContent = m || ''; errorEl.hidden = !m; };
   const showNotice = (m) => { noticeEl.textContent = m || ''; noticeEl.hidden = !m; };
   const rands = (c) => 'R' + ((c || 0) / 100).toFixed(2);
@@ -313,11 +340,10 @@ if (adminRoot) {
     if (img.published_path) return img.published_path;
     if (img.objectUrl) return img.objectUrl;
     try {
-      const r = await fetch(
+      const r = await authedFetch(
         `${SUPABASE_URL}/storage/v1/object/sign/product-photos/${img.storage_path}`,
         { method: 'POST',
-          headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json',
-                     Authorization: 'Bearer ' + adminSession.access_token },
+          headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({ expiresIn: 3600 }) });
       if (!r.ok) return '';
       const d = await r.json();
@@ -389,10 +415,9 @@ if (adminRoot) {
       try {
         const blob = await resize(files[i]);
         const path = `${productId}/${Date.now()}-${i}.jpg`;
-        const r = await fetch(`${SUPABASE_URL}/storage/v1/object/product-photos/${path}`, {
+        const r = await authedFetch(`${SUPABASE_URL}/storage/v1/object/product-photos/${path}`, {
           method: 'POST',
-          headers: { apikey: SUPABASE_KEY, 'Content-Type': 'image/jpeg',
-                     Authorization: 'Bearer ' + adminSession.access_token },
+          headers: { apikey: SUPABASE_KEY, 'Content-Type': 'image/jpeg' },
           body: blob });
         if (!r.ok) throw new Error(await r.text());
         editImages.push({ storage_path: path, published_path: null,
@@ -421,7 +446,7 @@ if (adminRoot) {
 
     saveBtn.disabled = true; saveStat.textContent = 'Saving…';
     try {
-      await supaApi(adminSession, 'rpc/admin_save_product', {
+      await supaApi(liveSession(), 'rpc/admin_save_product', {
         method: 'POST',
         body: JSON.stringify({
           p_id: ensureId(),
@@ -439,7 +464,7 @@ if (adminRoot) {
       });
       saveStat.textContent = 'Saved. Publishing to the site…';
       await publish();
-      await loadProducts(adminSession);
+      await loadProducts(liveSession());
       // Stay on the product after saving. Re-open it from the fresh data so
       // newly added photos now carry their database ids (otherwise a second
       // save would add them again), keeping the status line and scroll.
@@ -459,19 +484,18 @@ if (adminRoot) {
   // ── publishing ─────────────────────────────────
   async function publish() {
     try {
-      await supaApi(adminSession, 'publish_runs', {
+      await supaApi(liveSession(), 'publish_runs', {
         method: 'POST',
         headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ requested_by: userIdOf(adminSession) }),
+        body: JSON.stringify({ requested_by: userIdOf(liveSession()) }),
       });
     } catch (err) {
       console.error('Could not record the publish request:', err);
     }
     try {
-      const r = await fetch(PUBLISH_ENDPOINT, {
+      const r = await authedFetch(PUBLISH_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json',
-                   Authorization: 'Bearer ' + adminSession.access_token },
+        headers: { 'Content-Type': 'application/json' },
       });
       if (!r.ok) throw new Error(await r.text());
       saveStat.textContent = 'Saved. The site updates in a few minutes.';
