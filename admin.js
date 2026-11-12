@@ -399,7 +399,13 @@ if (adminRoot) {
       saveStat.textContent = 'Saved. Publishing to the site…';
       await publish();
       await loadProducts(adminSession);
-      closeEditor();
+      // Stay on the product after saving. Re-open it from the fresh data so
+      // newly added photos now carry their database ids (otherwise a second
+      // save would add them again), keeping the status line and scroll.
+      const status = saveStat.textContent, y = window.scrollY;
+      openEditor(editing.id);
+      saveStat.textContent = status;
+      window.scrollTo(0, y);
     } catch (err) {
       console.error('Save failed:', err);
       let detail = '';
