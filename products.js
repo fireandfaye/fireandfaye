@@ -71,6 +71,17 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "seven-stars-bracelet",
+    "name": "Seven Stars Bracelet",
+    "price": "R249.00",
+    "category": "bracelets",
+    "desc": "A beautiful gold chain bracelet adorned with seven sparkling stones, each delicately set along the chain. Its bold yet feminine design brings together golden shine and a touch of celestial sparkle. \n\nDetails: Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/seven-stars-bracelet-1.jpg",
+      "/images/products/seven-stars-bracelet-2.jpg"
+    ]
+  },
+  {
     "id": "solara-bangle",
     "name": "Solara Bangle",
     "price": "R219.00",
