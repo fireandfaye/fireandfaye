@@ -24,6 +24,17 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "dew-drop-bracelet",
+    "name": "Dew Drop Bracelet",
+    "price": "R269.00",
+    "category": "bracelets",
+    "desc": "A delicate gold bracelet featuring alternating teardrop and round-cut sparkling stones, beautifully arranged along a fine chain. With its soft, graceful design and subtle sparkle, it’s an effortlessly elegant piece that adds a touch of glamour to any look.\n\nDetails: Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/dew-drop-bracelet-1.jpg",
+      "/images/products/dew-drop-bracelet-2.jpg"
+    ]
+  },
+  {
     "id": "liquid-gold-bracelet",
     "name": "Liquid Gold Bracelet",
     "price": "R179.00",
@@ -400,17 +411,6 @@ const PRODUCTS = [
       "/images/products/daisy-fields-necklace-1.jpg",
       "/images/products/daisy-fields-necklace-2.jpg",
       "/images/products/daisy-fields-necklace-3.jpg"
-    ]
-  },
-  {
-    "id": "dew-drop-bracelet",
-    "name": "Dew Drop Bracelet",
-    "price": "R26900.00",
-    "category": "necklaces",
-    "desc": "A delicate gold bracelet featuring alternating teardrop and round-cut sparkling stones, beautifully arranged along a fine chain. With its soft, graceful design and subtle sparkle, it’s an effortlessly elegant piece that adds a touch of glamour to any look.\n\nDetails: Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
-    "images": [
-      "/images/products/dew-drop-bracelet-1.jpg",
-      "/images/products/dew-drop-bracelet-2.jpg"
     ]
   },
   {
