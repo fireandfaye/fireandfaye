@@ -557,6 +557,18 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "terra-bella-necklace",
+    "name": "Terra Bella Necklace",
+    "price": "R329.00",
+    "category": "necklaces",
+    "desc": "Abundance • Joy • Creativity • Connection\n\nA colourful celebration of natural gemstones and golden details. Featuring an eclectic mix of vibrant gemstone beads, delicate gold accents and beautifully textured medallion charms, Terra Bella brings together earthy tones and playful colour in one eye-catching piece. Each stone adds its own character, creating a necklace that feels as unique as the person wearing it.\n\nDetails: Natural gemstones (some dyed) • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/terra-bella-necklace-1.jpg",
+      "/images/products/terra-bella-necklace-2.jpg",
+      "/images/products/terra-bella-necklace-3.jpg"
+    ]
+  },
+  {
     "id": "rainbow-fish-necklace",
     "name": "The Rainbow Fish Necklace",
     "price": "R449.00",
