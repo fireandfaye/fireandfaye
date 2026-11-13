@@ -483,6 +483,18 @@
     ]
   },
   {
+    "id": "pearls-of-grace-necklace",
+    "name": "Pearls of Grace Necklace",
+    "price": "R349.00",
+    "category": "necklaces",
+    "desc": "Wisdom • Femininity • Elegance • Serenity\n\nA delicate gold chain adorned with luminous freshwater pearls in varying sizes, creating a beautiful, softly layered effect. Each pearl has its own natural shape and lustre, giving the necklace a timeless, romantic feel. Elegant worn on its own or layered with your favourite pieces.\n\nDetails: Freshwater pearls • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/pearls-of-grace-necklace-1.jpg",
+      "/images/products/pearls-of-grace-necklace-2.jpg",
+      "/images/products/pearls-of-grace-necklace-3.jpg"
+    ]
+  },
+  {
     "id": "rainbows-end-necklace",
     "name": "Rainbow’s End Necklace",
     "price": "R229.00",
