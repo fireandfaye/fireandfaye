@@ -519,6 +519,18 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "serpents-elixir-necklace",
+    "name": "Serpent’s Elixir Necklace",
+    "price": "R329.00",
+    "category": "necklaces",
+    "desc": "Transformation • Protection • Wisdom • Renewal\n\nA striking green gemstone necklace featuring rich Green Onyx beads, delicate golden accents and a sculptural golden serpent pendant. Green Onyx is traditionally associated with strength, balance and personal growth, while the serpent symbol represents transformation, renewal and the wisdom that comes with embracing change. A bold, mystical piece with an earthy elegance.\n\nDetails: Green Onyx • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/serpents-elixir-necklace-1.jpg",
+      "/images/products/serpents-elixir-necklace-2.jpg",
+      "/images/products/serpents-elixir-necklace-3.jpg"
+    ]
+  },
+  {
     "id": "soul-alignment-necklace",
     "name": "Soul Alignment Necklace",
     "price": "R289.00",
