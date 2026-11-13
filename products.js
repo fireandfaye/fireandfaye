@@ -531,6 +531,18 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "sea-guardian-bracelet",
+    "name": "Sea Guardian Bracelet",
+    "price": "R279.00",
+    "category": "necklaces",
+    "desc": "Protection • Wisdom • Serenity • Good Fortune\n\nInspired by the beauty of the ocean, this bracelet combines vibrant turquoise stones with luminous freshwater pearls and a delicate golden sea turtle charm. Turquoise has long been treasured across cultures and is traditionally associated with protection, courage and good fortune, while freshwater pearls symbolise wisdom, femininity and serenity. A beautiful coastal-inspired piece with a meaningful touch.\n\nDetails: Turquoise • Freshwater pearls • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/sea-guardian-bracelet-1.jpg",
+      "/images/products/sea-guardian-bracelet-2.jpg",
+      "/images/products/sea-guardian-bracelet-3.jpg"
+    ]
+  },
+  {
     "id": "serpents-elixir-necklace",
     "name": "Serpent’s Elixir Necklace",
     "price": "R329.00",
