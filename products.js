@@ -62,7 +62,7 @@ const PRODUCTS = [
     "name": "Rosewater Dreams Bracelet",
     "price": "R269.00",
     "category": "bracelets",
-    "desc": "Amethyst • Rose Quartz • Pink Chalcedony\n\nA dreamy blend of blush pinks, lilac and soft purple tones. This beautiful combination is associated with intuition, self-love and inner peace — for trusting yourself, nurturing your heart and finding your calm.",
+    "desc": "A dreamy blend of blush pinks, lilac and soft purple tones, featuring Amethyst, Rose Quartz and Pink Chalcedony. Amethyst is traditionally associated with intuition and inner peace, Rose Quartz with love and compassion, and Pink Chalcedony with emotional balance and nurturing energy. Together, these gemstones create a beautiful combination centred around trusting yourself, nurturing your heart and finding your calm.\n\nDetails: Amethyst • Rose Quartz • Pink Chalcedony • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
     "images": [
       "/images/products/rosewater-dreams-bracelet-1.jpg",
       "/images/products/rosewater-dreams-bracelet-2.jpg",
