@@ -343,6 +343,18 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "confetti-dreams-necklace",
+    "name": "Confetti Dreams Necklace",
+    "price": "R369.00",
+    "category": "necklaces",
+    "desc": "Joy • Abundance • Serenity • Harmony • New Beginnings\n\nA colourful mix of natural gemstones and luminous freshwater pearls, brought together with delicate golden accents. Featuring Green Aventurine, Aquamarine, Chalcedony and dyed Quartz, each stone adds its own beautiful shade to this playful yet elegant design. Finished with dangling freshwater pearls, it’s a little celebration of colour, texture and individuality.\n\nGreen Aventurine is traditionally associated with luck and abundance, Aquamarine with calm and clear communication, Chalcedony with harmony and balance, and Quartz with clarity and positive energy.\n\nDetails: Freshwater pearls • Green Aventurine • Aquamarine • Dyed Quartz • Chalcedony • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/confetti-dreams-necklace-1.jpg",
+      "/images/products/confetti-dreams-necklace-2.jpg",
+      "/images/products/confetti-dreams-necklace-3.jpg"
+    ]
+  },
+  {
     "id": "constellation-necklace",
     "name": "Constellation Necklace",
     "price": "R259.00",
