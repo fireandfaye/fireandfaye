@@ -535,9 +535,9 @@ const PRODUCTS = [
   {
     "id": "rainbows-end-necklace",
     "name": "Rainbow’s End Necklace",
-    "price": "R229.00",
+    "price": "R219.00",
     "category": "necklaces",
-    "desc": "Wisdom • Calm • Abundance • Confidence • Love • Passion\n\nA colourful mix of faceted gemstones in rich rainbow tones, finished with delicate gold detailing. Each stone carries its own intention, creating a playful piece made for self-expression, confidence and bringing a little more colour into your everyday.\n\nDetails: Lapis Lazuli • Aquamarine • Green Aventurine • Carnelian • Rose Quartz • Garnet • 18K gold plated stainless steel • Waterproof • Hypoallergenic",
+    "desc": "Wisdom • Calm • Abundance • Confidence • Love • Passion\n\nA colourful mix of faceted gemstones in rich rainbow tones, finished with delicate gold detailing. Each stone carries its own intention, creating a playful piece made for self-expression, confidence and bringing a little more colour into your everyday.\n\nDetails: Lapis Lazuli • Aquamarine • Green Aventurine • Carnelian • Dyed Quartz • Garnet • 18K gold plated stainless steel • Waterproof • Hypoallergenic",
     "images": [
       "/images/products/rainbows-end-necklace-1.jpg",
       "/images/products/rainbows-end-necklace-2.jpg"
