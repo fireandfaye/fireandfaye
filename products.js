@@ -86,7 +86,7 @@ const PRODUCTS = [
     "name": "Seafoam Magic Bracelet",
     "price": "R269.00",
     "category": "bracelets",
-    "desc": "Aquamarine • Amazonite • Blue Apatite\n\nA dreamy blend of icy blues. This beautiful combination is associated with courage, authenticity and motivation — for confidence, staying true to yourself and pursuing your goals.",
+    "desc": "Courage • Authenticity • Motivation • Confidence\n\nA dreamy blend of icy blue gemstones, featuring Aquamarine, Amazonite and Blue Apatite. With their beautiful ocean-inspired shades, these stones create a delicate yet colourful combination. Aquamarine is traditionally associated with courage and clear communication, Amazonite with authenticity and emotional balance, and Blue Apatite with motivation, confidence and pursuing your goals.\n\nDetails: Aquamarine • Amazonite • Blue Apatite • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
     "images": [
       "/images/products/seafoam-magic-bracelet-1.jpg",
       "/images/products/seafoam-magic-bracelet-2.jpg",
