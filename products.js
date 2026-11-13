@@ -431,7 +431,7 @@ const PRODUCTS = [
     "name": "Evil Eye’s Embrace Necklace",
     "price": "R319.00",
     "category": "necklaces",
-    "desc": "Protection • Peace • Wisdom • Good Fortune\n\nA beautiful blend of turquoise, luminous freshwater pearls and traditional blue glass evil-eye beads. Worn across many cultures for centuries, the evil eye symbol is believed to protect against envy, jealousy and negative energy. Turquoise is traditionally associated with protection, courage, good fortune and clear communication, while freshwater pearls symbolise wisdom, purity and feminine grace. A meaningful combination of beauty, symbolism and cultural tradition.\n\nDetails: Turquoise • Freshwater pearls • Glass evil-eye beads • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "desc": "Protection • Peace • Wisdom • Good Fortune\n\nA beautiful blend of turquoise, luminous freshwater pearls and traditional blue glass evil-eye beads. \nWorn across many cultures for centuries, the evil eye symbol is believed to protect against envy, jealousy and negative energy. Turquoise is traditionally associated with protection, courage, good fortune and clear communication, while freshwater pearls symbolise wisdom, purity and feminine grace. A meaningful combination of beauty, symbolism and cultural tradition.\n\nDetails: Turquoise • Freshwater pearls • Glass beads • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
     "images": [
       "/images/products/evil-eyes-embrace-necklace-1.jpg",
       "/images/products/evil-eyes-embrace-necklace-2.jpg"
