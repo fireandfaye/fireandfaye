@@ -355,6 +355,18 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "crescent-rose-necklace",
+    "name": "Crescent Rose Necklace",
+    "price": "R349.00",
+    "category": "necklaces",
+    "desc": "Love • Compassion • Emotional Balance • Strength\n\nA beautiful blend of soft pink gemstones and golden details, featuring delicate Rose Quartz chips, dusty pink Rhodonite beads and a striking gold crescent pendant. Rose Quartz is traditionally associated with love, compassion and emotional healing, while Rhodonite is linked to inner strength, forgiveness and emotional balance. A romantic, earthy piece with a touch of celestial charm.\n\nDetails: Rose Quartz • Rhodonite • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/crescent-rose-necklace-1.jpg",
+      "/images/products/crescent-rose-necklace-2.jpg",
+      "/images/products/crescent-rose-necklace-3.jpg"
+    ]
+  },
+  {
     "id": "daisy-fields-necklace",
     "name": "Daisy Fields Necklace",
     "price": "R259.00",
