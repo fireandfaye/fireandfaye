@@ -467,7 +467,8 @@ const PRODUCTS = [
     "category": "necklaces",
     "desc": "Earthy blue-green African Turquoise stones paired with delicate gold-toned details, creating a naturally whimsical, one-of-a-kind piece. For spiritual awakening, self-discovery and a deeper connection with nature. Crafted with 18K gold-plated stainless-steel.",
     "images": [
-      "/images/products/gaias-gift-necklace-1.jpg"
+      "/images/products/gaias-gift-necklace-1.jpg",
+      "/images/products/gaias-gift-necklace-2.jpg"
     ]
   },
   {
