@@ -159,16 +159,34 @@
               <label for="adm-f-price">Price (R)</label>
               <input type="text" id="adm-f-price" inputmode="decimal" placeholder="259.00" />
             </div>
-            <div class="cart-field">
-              <label for="adm-f-qty">Quantity you can make <span class="cart-label-opt">(optional)</span></label>
-              <input type="text" id="adm-f-qty" inputmode="numeric" placeholder="3" />
-            </div>
           </div>
           <div class="cart-field">
             <label for="adm-f-desc">Description</label>
             <textarea id="adm-f-desc" rows="10"></textarea>
             <p class="account-muted">First line: the stones and what they mean, separated by &bull;. Then a blank line, the description, another blank line, and a line starting <strong>Details:</strong> with the materials.</p>
           </div>
+
+          <h3 class="admin-subheading">Stock</h3>
+          <p class="account-muted">The site shows <strong>Ready now + Extra I can make</strong>. A sale uses ready pieces first; anything sold from <em>Extra</em> shows on the order as &ldquo;to make&rdquo;. Leave <em>Ready now</em> empty to stop tracking stock for this piece &mdash; it then sells without a limit.</p>
+          <div class="admin-field-row">
+            <div class="cart-field">
+              <label for="adm-f-ready">Ready now</label>
+              <input type="text" id="adm-f-ready" inputmode="numeric" placeholder="Not tracked" />
+            </div>
+            <div class="cart-field">
+              <label for="adm-f-extra">Extra I can make</label>
+              <input type="text" id="adm-f-extra" inputmode="numeric" placeholder="0" />
+            </div>
+            <div class="cart-field">
+              <label for="adm-f-display">Customers see</label>
+              <select id="adm-f-display">
+                <option value="quantity">How many are available</option>
+                <option value="in_stock">&ldquo;In stock&rdquo; only</option>
+                <option value="low">&ldquo;In stock&rdquo;, then &ldquo;Only 2 left&rdquo;</option>
+              </select>
+            </div>
+          </div>
+          <p class="admin-summary" id="adm-stock-summary"></p>
 
           <h3 class="admin-subheading">Photos</h3>
           <p class="account-muted">The first photo is the one shown on the category page. Drag is not supported yet &mdash; use the arrows.</p>
@@ -194,6 +212,7 @@
             <option value="pending">Pending</option>
             <option value="failed">Failed</option>
             <option value="cancelled">Cancelled</option>
+            <option value="to-make">Has pieces to make</option>
           </select>
           <input type="search" id="adm-search" placeholder="Search name, email or item" aria-label="Search orders" />
         </div>

@@ -61,6 +61,8 @@
         `;
         grid.appendChild(card);
       });
+      // app.js: put "Sold out" on cards for pieces with no stock left.
+      applyStockToCards();
     }
 
     function updateGrid() {

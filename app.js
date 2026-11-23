@@ -158,6 +158,7 @@
     let deliveryAddress = null;   // { placeId, formattedAddress, province, hasStreetNumber }
     const CART_KEY = 'ff-cart-v1';
     const MAX_QTY = 20;
+    let stockMap = null;      // live stock, see the Stock section; null until loaded
 
     const rands = (cents) => 'R' + (cents / 100).toFixed(2);
     const productById = (id) => PRODUCTS.find(p => p.id === id);
@@ -204,9 +205,9 @@
     function addToCart(id, qty) {
       const line = cart.find(l => l.id === id);
       if (line) {
-        line.qty = Math.min(MAX_QTY, line.qty + (qty || 1));
+        line.qty = Math.min(maxQtyFor(id), line.qty + (qty || 1));
       } else {
-        cart.push({ id, qty: Math.min(MAX_QTY, qty || 1) });
+        cart.push({ id, qty: Math.min(maxQtyFor(id), qty || 1) });
       }
       saveCart();
       renderCart();
@@ -216,7 +217,7 @@
       const line = cart.find(l => l.id === id);
       if (!line) return;
       if (qty <= 0) return removeFromCart(id);
-      line.qty = Math.min(MAX_QTY, qty);
+      line.qty = Math.min(maxQtyFor(id), qty);
       saveCart();
       renderCart();
     }
@@ -258,10 +259,11 @@
           <div>
             <a class="cart-line-name" href="/${p.category}/${p.id}/">${p.name}</a>
             <div class="cart-line-price">${p.price} each</div>
+            ${cartStockNote(line)}
             <div class="qty">
               <button type="button" data-act="dec" aria-label="Decrease quantity">&minus;</button>
               <span>${line.qty}</span>
-              <button type="button" data-act="inc" aria-label="Increase quantity" ${line.qty >= MAX_QTY ? 'disabled' : ''}>+</button>
+              <button type="button" data-act="inc" aria-label="Increase quantity" ${line.qty >= maxQtyFor(line.id) ? 'disabled' : ''}>+</button>
             </div>
           </div>
           <div class="cart-line-right">
@@ -541,6 +543,10 @@
       showCartError('');
       if (!cart.length) return;
 
+      if (cart.some(l => maxQtyFor(l.id) <= 0)) {
+        return showCartError('Something in your cart has sold out. Please remove it to continue.');
+      }
+
       const customer = collectCustomer();
       if (!customer) return;
 
@@ -562,6 +568,12 @@
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok || !data.redirectUrl) {
+          // Sold out (or fewer left) since the page loaded: show the new count.
+          if (data.stock && stockMap) {
+            const prev = stockMap[data.stock.productId] || { display: 'quantity' };
+            stockMap[data.stock.productId] = { ...prev, available: data.stock.available };
+            renderCart();
+          }
           showCartError(data.error || 'We could not start the payment. Please try again.');
           cartPayBtn.disabled = false;
           cartPayBtn.textContent = original;
@@ -588,6 +600,8 @@
             backend: data,
           });
           showCartError('Our prices have just changed. Please review your order and try again.');
+          // Close the checkout that was just made, so its pieces are not held.
+          cancelCheckout(data.orderId);
           // Repricing the cart from the data we have would only show the old
           // figures again; a reload picks up whichever version is now live.
           setTimeout(() => window.location.reload(), 2500);
@@ -638,8 +652,10 @@
         confirmPayment();
       } else if (status === 'cancelled') {
         showPayBanner('Payment cancelled. Your cart has been kept, so you can pick up where you left off.', true);
+        cancelCheckout(takePendingCheckout());
       } else if (status === 'failed') {
         showPayBanner('That payment didn&rsquo;t go through. Your cart has been kept &mdash; please try again, or email us if it keeps failing.', true);
+        cancelCheckout(takePendingCheckout());
       }
 
       // Don't leave ?payment= in the URL to be re-triggered on refresh.
@@ -650,19 +666,35 @@
     // The ?payment=success in the URL proves nothing on its own — anyone can
     // type it. This hands the checkout id to the backend, which asks Yoco
     // directly whether it was really paid before anything is emailed.
-    function confirmPayment() {
+    // The checkout id saved before going to Yoco, removed as it is read.
+    // Clearing first means a refresh of the return page cannot act twice
+    // (a second set of confirmation emails, or a second cancel).
+    function takePendingCheckout() {
       let checkoutId = null;
       try { checkoutId = localStorage.getItem(PENDING_KEY); } catch (e) {}
       if (!checkoutId) {
         const m = document.cookie.match(new RegExp('(?:^|; )' + PENDING_KEY + '=([^;]*)'));
         if (m) checkoutId = decodeURIComponent(m[1]);
       }
-      if (!checkoutId) return;
-
-      // Clear first: a refresh of the success page must not send a second
-      // set of confirmation emails.
       try { localStorage.removeItem(PENDING_KEY); } catch (e) {}
       try { document.cookie = PENDING_KEY + '=;path=/;max-age=0;domain=.fireandfaye.co.za'; } catch (e) {}
+      return checkoutId;
+    }
+
+    // Not paying after all: the backend closes the Yoco page and gives the
+    // held pieces back, rather than leaving them held for the full hour.
+    function cancelCheckout(checkoutId) {
+      if (!checkoutId) return;
+      fetch(CONFIRM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checkoutId, action: 'cancel' }),
+      }).catch(err => console.error('Could not cancel the checkout:', err));
+    }
+
+    function confirmPayment() {
+      const checkoutId = takePendingCheckout();
+      if (!checkoutId) return;
 
       fetch(CONFIRM_ENDPOINT, {
         method: 'POST',
@@ -753,6 +785,84 @@
       });
     }
 
+    // ── Stock ──────────────────────────────────────
+    // Read live on every page load, never baked in at publish: a piece sold
+    // at 10am must not still look available until Paige next publishes.
+    // Only products with stock tracking switched on are listed; anything else
+    // sells as before. The checkout enforces the real limit; this is only what
+    // the customer is shown.
+    const LOW_STOCK = 2;
+    const SHIPS_TEXT = 'Ships within 2&ndash;3 working days';
+
+    const stockLoaded = fetch(`${SUPABASE_URL}/rest/v1/rpc/public_stock`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('stock ' + r.status)))
+      .then(rows => { stockMap = Object.fromEntries(rows.map(r => [r.id, r])); })
+      .catch(err => { console.error('Could not load stock:', err); stockMap = {}; });
+
+    // null means stock is not tracked for this piece.
+    function stockOf(id) { return (stockMap && stockMap[id]) || null; }
+    function maxQtyFor(id) {
+      const s = stockOf(id);
+      return s ? Math.min(MAX_QTY, Math.max(0, s.available)) : MAX_QTY;
+    }
+    function stockLabel(s) {
+      if (!s) return '';
+      if (s.available <= 0) return 'Sold out';
+      if (s.display === 'quantity') return `${s.available} available`;
+      if (s.display === 'low' && s.available <= LOW_STOCK) return `Only ${s.available} left`;
+      return 'In stock';
+    }
+
+    function cartStockNote(line) {
+      const s = stockOf(line.id);
+      if (!s) return '';
+      if (s.available <= 0) return '<div class="cart-line-stock out">Sold out &mdash; please remove</div>';
+      if (line.qty >= s.available && s.display !== 'in_stock') {
+        return `<div class="cart-line-stock">Only ${s.available} available</div>`;
+      }
+      return '';
+    }
+
+    // Category and homepage cards: a "Sold out" tag on the photo. home.js
+    // calls this again after it redraws its grid.
+    function applyStockToCards() {
+      if (!stockMap) return;
+      document.querySelectorAll('a.card[href]').forEach(card => {
+        const id = card.getAttribute('href').split('/').filter(Boolean).pop();
+        const s = stockOf(id);
+        const tag = card.querySelector('.card-soldout');
+        if (s && s.available <= 0) {
+          if (!tag) {
+            const t = document.createElement('span');
+            t.className = 'coming-soon-tag card-soldout';
+            t.textContent = 'Sold out';
+            card.appendChild(t);
+          }
+        } else if (tag) tag.remove();
+      });
+    }
+
+    // A cart saved before something sold out is brought down to what is left.
+    // Sold-out lines stay, marked, so the customer sees what happened.
+    function fitCartToStock() {
+      let changed = false;
+      cart.forEach(l => {
+        const max = maxQtyFor(l.id);
+        if (max > 0 && l.qty > max) { l.qty = max; changed = true; }
+      });
+      if (changed) saveCart();
+    }
+
+    stockLoaded.then(() => {
+      applyStockToCards();
+      fitCartToStock();
+      renderCart();
+    });
+
     // ── Add to cart, from a product page ───────────
     // Once a piece is in the cart the button becomes "Go to cart" rather than
     // reverting to "Add to Cart" — otherwise the obvious next click adds a
@@ -774,6 +884,11 @@
           window.location.href = '/cart/';
           return;
         }
+        const inCart = (cart.find(l => l.id === productId) || {}).qty || 0;
+        if (inCart >= maxQtyFor(productId)) {
+          pdpAdd.textContent = 'No more available';
+          return;
+        }
         addToCart(productId, 1);
         pdpAdd.textContent = 'Added to cart \u2713';
         pdpAdd.classList.add('added');
@@ -784,6 +899,21 @@
       // Returning to a page for something already in the cart should not
       // offer to add it again.
       if (cart.some(line => line.id === productId)) showGoToCart();
+
+      stockLoaded.then(() => {
+        const s = stockOf(productId);
+        if (!s) return;
+        const el = document.createElement('p');
+        el.className = 'pdp-stock' + (s.available <= 0 ? ' out' : '');
+        el.innerHTML = s.available <= 0 ? 'Sold out' : `${stockLabel(s)} &middot; ${SHIPS_TEXT}`;
+        const price = document.querySelector('.pdp-price');
+        if (price) price.insertAdjacentElement('afterend', el);
+        if (s.available <= 0 && !cart.some(line => line.id === productId)) {
+          pdpAdd.disabled = true;
+          pdpAdd.textContent = 'Sold out';
+          pdpAdd.classList.add('sold-out');
+        }
+      });
     }
 
     renderCart();

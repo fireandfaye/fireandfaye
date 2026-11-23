@@ -46,6 +46,8 @@ if (adminRoot) {
   let pendingEmail = '';
   let allOrders = [];
   let allProducts = [];
+  let heldByProduct = {};  // product id -> pieces held by checkouts in progress
+  let makeLines = {};      // checkout id -> { product id -> { make, short } }
   let editing = null;      // the product open in the editor
   let editImages = [];     // its photos, in display order, unsaved
 
@@ -129,15 +131,43 @@ if (adminRoot) {
       allOrders = await supaApi(session,
         'orders?select=*,order_items(*)&order=created_at.desc');
       renderOrders();
+      loadMakeLines(session);
     } catch (err) {
       console.error('Could not load orders:', err);
       ordersEl.innerHTML = '<p class="admin-muted">Could not load orders. Reload the page to try again.</p>';
     }
   }
 
+  // Order lines sold from "Extra I can make" (to make) or paid after the
+  // stock ran out (short). Shown on the order; see supabase-stock.sql.
+  async function loadMakeLines(session) {
+    try {
+      const rows = await supaApi(session,
+        'stock_holds?select=checkout_id,product_id,from_extra,short&status=eq.sold&or=(from_extra.gt.0,short.gt.0)');
+      makeLines = {};
+      rows.forEach(r => {
+        (makeLines[r.checkout_id] = makeLines[r.checkout_id] || {})[r.product_id] =
+          { make: r.from_extra || 0, short: r.short || 0 };
+      });
+      renderOrders();
+    } catch (err) {
+      console.error('Could not load pieces to make:', err);
+    }
+  }
+
+  function makeNote(o, productId) {
+    const m = (makeLines[o.checkout_id] || {})[productId];
+    if (!m) return '';
+    const parts = [];
+    if (m.make) parts.push(`${m.make} to make`);
+    if (m.short) parts.push(`${m.short} paid after it sold out`);
+    return ` <em class="admin-make">(${parts.join(', ')})</em>`;
+  }
+
   function matchesFilters(o) {
     const status = statusSel.value;
-    if (status !== 'all' && o.status !== status) return false;
+    if (status === 'to-make') { if (!makeLines[o.checkout_id]) return false; }
+    else if (status !== 'all' && o.status !== status) return false;
     const q = searchBox.value.trim().toLowerCase();
     if (!q) return true;
     const hay = [o.name, o.email, o.phone, o.address, o.province,
@@ -147,7 +177,7 @@ if (adminRoot) {
 
   function orderHtml(o) {
     const items = (o.order_items || []).map(i =>
-      `<li>${i.quantity} &times; ${esc(i.name)}<span>${rands(i.unit_cents * i.quantity)}</span></li>`).join('');
+      `<li>${i.quantity} &times; ${esc(i.name)}${makeNote(o, i.product_id)}<span>${rands(i.unit_cents * i.quantity)}</span></li>`).join('');
     const addr = [o.address, o.address_extra].filter(Boolean).join('\n');
     return `<article class="admin-order">
         <div class="admin-order-head">
@@ -237,6 +267,14 @@ if (adminRoot) {
       // here too, ignoring capitals, so it does not depend on the database.
       allProducts.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
       allProducts.forEach(p => (p.product_images || []).sort((a, b) => a.position - b.position));
+      heldByProduct = {};
+      try {
+        const holds = await supaApi(session,
+          `stock_holds?select=product_id,quantity&status=eq.held&expires_at=gt.${encodeURIComponent(new Date().toISOString())}`);
+        holds.forEach(h => { heldByProduct[h.product_id] = (heldByProduct[h.product_id] || 0) + h.quantity; });
+      } catch (err) {
+        console.error('Could not load stock holds:', err);
+      }
       renderProducts();
     } catch (err) {
       console.error('Could not load products:', err);
@@ -257,13 +295,23 @@ if (adminRoot) {
           <span class="admin-prod-main">
             <span class="admin-prod-name">${esc(p.name)}</span>
             <span class="admin-order-meta">${esc(p.category)} &middot; ${imgs.length} photo${imgs.length === 1 ? '' : 's'}${
-              p.is_listed ? '' : ' &middot; hidden'}</span>
+              p.is_listed ? '' : ' &middot; hidden'} &middot; ${stockSummary(p, true)}</span>
           </span>
           <span class="admin-prod-price">${rands(p.price_cents)}</span>
         </button>`;
     }).join('') : '<p class="admin-muted">No products match that filter.</p>';
     prodList.querySelectorAll('.admin-prod').forEach(b =>
       b.addEventListener('click', () => openEditor(b.dataset.id)));
+  }
+
+  // "5 ready + 3 extra · 7 on the site (1 held)", or a short form for the list.
+  function stockSummary(p, short) {
+    if (p.stock_ready == null) return short ? 'stock not tracked' : 'Stock is not tracked for this piece: it sells without a limit.';
+    const held = heldByProduct[p.id] || 0;
+    const shown = Math.max(0, p.stock_ready + (p.stock_extra || 0) - held);
+    if (short) return shown ? `${p.stock_ready} ready + ${p.stock_extra || 0} extra` : 'sold out';
+    return `On the site now: ${shown ? shown + ' available' : 'Sold out'}` +
+      (held ? ` (${held} held by ${held === 1 ? 'a customer' : 'customers'} paying right now)` : '') + '.';
   }
 
   prodCat.addEventListener('change', renderProducts);
@@ -280,6 +328,7 @@ if (adminRoot) {
   function newProduct() {
     const cat = prodCat.value === 'all' ? 'necklaces' : prodCat.value;
     fillEditor({ id: null, name: '', category: cat, price_cents: 0, qty_available: null,
+                 stock_ready: null, stock_extra: 0, stock_display: 'quantity',
                  description: '', is_listed: true, product_images: [] });
     editTitle.textContent = 'New product';
     f('price').value = '';
@@ -316,7 +365,10 @@ if (adminRoot) {
     f('name').value  = editing.name;
     f('cat').value   = editing.category;
     f('price').value = (editing.price_cents / 100).toFixed(2);
-    f('qty').value   = editing.qty_available == null ? '' : editing.qty_available;
+    f('ready').value = editing.stock_ready == null ? '' : editing.stock_ready;
+    f('extra').value = editing.stock_extra ? editing.stock_extra : '';
+    f('display').value = editing.stock_display || 'quantity';
+    document.getElementById('adm-stock-summary').textContent = editing.id ? stockSummary(editing, false) : '';
     f('desc').value  = editing.description || '';
     f('listed').checked = !!editing.is_listed;
     saveStat.textContent = ''; photoStat.textContent = '';
@@ -445,7 +497,13 @@ if (adminRoot) {
     if (!editImages.length && f('listed').checked) {
       saveStat.textContent = 'A product shown on the site needs at least one photo.'; return;
     }
-    const qtyRaw = String(f('qty').value).replace(/[^0-9]/g, '');
+    const readyRaw = String(f('ready').value).trim();
+    const extraRaw = String(f('extra').value).trim();
+    if (readyRaw && !/^\d+$/.test(readyRaw)) { saveStat.textContent = '"Ready now" should be a whole number, or empty.'; return; }
+    if (extraRaw && !/^\d+$/.test(extraRaw)) { saveStat.textContent = '"Extra I can make" should be a whole number, or empty.'; return; }
+    if (!readyRaw && extraRaw && extraRaw !== '0') {
+      saveStat.textContent = 'Fill in "Ready now" too (0 if none are made yet), or stock will not be tracked.'; return;
+    }
 
     saveBtn.disabled = true; saveStat.textContent = 'Saving…';
     try {
@@ -457,12 +515,23 @@ if (adminRoot) {
           p_category: f('cat').value,
           p_description: f('desc').value.trim(),
           p_price_cents: Math.round(price * 100),
-          p_qty: qtyRaw === '' ? null : parseInt(qtyRaw, 10),
+          p_qty: editing.qty_available == null ? null : editing.qty_available,   // old field, kept as it was
           p_is_listed: f('listed').checked,
           p_images: editImages.map(i => ({
             id: i.id, storage_path: i.storage_path || null,
             published_path: i.published_path || null,
             width: i.width, height: i.height })),
+        }),
+      });
+      // Stock is its own call (supabase-stock.sql) and is read live by the
+      // site, so it is right as soon as this returns, before any publish.
+      await supaApi(liveSession(), 'rpc/admin_save_stock', {
+        method: 'POST',
+        body: JSON.stringify({
+          p_id: editing.id,
+          p_ready: readyRaw === '' ? null : parseInt(readyRaw, 10),
+          p_extra: extraRaw === '' ? 0 : parseInt(extraRaw, 10),
+          p_display: f('display').value,
         }),
       });
       saveStat.textContent = 'Saved. Publishing to the site…';

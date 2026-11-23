@@ -1666,6 +1666,27 @@
     }
     .pdp-add:hover { opacity: 0.88; transform: translateY(-1px); }
     .pdp-add.added { background: var(--sage-deep); color: var(--white); }
+    /* Stock (app.js, read live). Sits under the price, pulling up into its margin. */
+    .pdp-stock {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      color: var(--sage-deep);
+      margin: -1.2rem 0 1.8rem;
+    }
+    .pdp-stock.out { color: var(--gold-deep); text-transform: uppercase; letter-spacing: 0.2em; }
+    .pdp-add.sold-out,
+    .pdp-add.sold-out:hover { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .cart-line-stock {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.68rem;
+      color: var(--gold-deep);
+      margin: -0.3rem 0 0.6rem;
+    }
+    .cart-line-stock.out { color: #a33; }
+    /* The sold-out tag reuses .coming-soon-tag, on the right so it never sits
+       on top of a Coming Soon tag. */
+    .card-soldout { left: auto; right: 1rem; }
     .pdp-note {
       font-size: 0.72rem;
       color: var(--text-faint);
