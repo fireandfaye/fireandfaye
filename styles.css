@@ -2399,4 +2399,8 @@
       .cart-section-label { font-size: 0.66rem; }
     }
     /* "+ Add a product" sits at the end of the admin filter row. */
-    .admin-new-btn { margin-left: auto; opacity: 1; animation: none; padding: 0.65rem 1.2rem; }
+    /* border: none, as on .pdp-add and .account-btn: .btn-primary was written
+       for an <a>, so on a <button> the browser's grey bevelled border showed. */
+    .admin-new-btn { margin-left: auto; opacity: 1; animation: none; padding: 0.65rem 1.2rem;
+                     border: none; cursor: pointer; }
+    .admin-new-btn:hover { opacity: 0.88; }
