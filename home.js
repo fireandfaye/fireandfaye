@@ -50,7 +50,6 @@
         card.href = `/${p.category}/${p.id}/`;
         card.setAttribute('data-category', p.category);
         card.innerHTML = `
-          <div class="card-corner"></div>
           <div class="card-photo-wrap">
             <img class="card-photo" src="${p.images[0]}" alt="${p.name}" width="700" height="933" loading="lazy" decoding="async" />
           </div>

@@ -232,7 +232,10 @@ if (adminRoot) {
     prodList.innerHTML = '<p class="admin-muted">Loading products&hellip;</p>';
     try {
       allProducts = await supaApi(session,
-        'products?select=*,product_images(*)&order=category.asc,name.asc');
+        'products?select=*,product_images(*)&order=name.asc');
+      // A to Z by name, so Paige can find a piece by scanning. Sorted
+      // here too, ignoring capitals, so it does not depend on the database.
+      allProducts.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
       allProducts.forEach(p => (p.product_images || []).sort((a, b) => a.position - b.position));
       renderProducts();
     } catch (err) {

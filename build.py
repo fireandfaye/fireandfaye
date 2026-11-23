@@ -165,7 +165,6 @@ def card(p):
     """A product card — a real anchor, so crawlers follow it and it can be shared."""
     href = f"/{p['category']}/{p['id']}/"
     return f"""        <a class="card" href="{href}">
-          <div class="card-corner"></div>
           <div class="card-photo-wrap">
             <img class="card-photo" src="{p['images'][0]}" alt="{html.escape(p['name'])}"{dims(p['images'][0])} loading="lazy" decoding="async" />
           </div>
