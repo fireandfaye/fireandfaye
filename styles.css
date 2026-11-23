@@ -2322,6 +2322,37 @@
     }
     .admin-photo-bar button:disabled { opacity: 0.3; cursor: default; }
     .admin-photo-bar button:not(:disabled):hover { background: var(--cream); }
+    .admin-photo img { cursor: zoom-in; }
+    .admin-zoom {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(30, 24, 20, 0.88);
+      cursor: zoom-out;
+    }
+    .admin-zoom img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+    .admin-zoom-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1.6rem;
+      line-height: 1;
+      color: var(--white);
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+    }
     .admin-upload { display: inline-block; cursor: pointer; }
     .admin-check {
       display: flex;

@@ -432,6 +432,30 @@ if (adminRoot) {
         if (b.dataset.act === 'down') [editImages[n + 1], editImages[n]] = [editImages[n], editImages[n + 1]];
         renderPhotos();
       }));
+    photosEl.querySelectorAll('.admin-photo img').forEach(im =>
+      im.addEventListener('click', () => openPhoto(im.src)));
+  }
+
+  // Tap a photo for a larger view. Closes on a tap anywhere, the x, or Escape.
+  function openPhoto(src) {
+    if (!src) return;
+    const box = document.createElement('div');
+    box.className = 'admin-zoom';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-label', 'Photo');
+    box.innerHTML = `<img src="${esc(src)}" alt="" />
+      <button class="admin-zoom-close" type="button" aria-label="Close">&times;</button>`;
+    const close = () => {
+      box.remove();
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKey);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    box.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(box);
+    box.querySelector('.admin-zoom-close').focus();
   }
 
   // Resize here, in the browser, rather than in the publish job: the build
