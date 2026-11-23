@@ -2290,7 +2290,8 @@
       gap: 0.75rem;
       margin: 1rem 0;
     }
-    .admin-photo { border: 1px solid var(--line); background: var(--white); }
+    /* min-width 0: a grid item otherwise refuses to be narrower than its bar. */
+    .admin-photo { border: 1px solid var(--line); background: var(--white); min-width: 0; }
     .admin-photo img {
       display: block;
       width: 100%;
@@ -2299,6 +2300,7 @@
     }
     .admin-photo-bar {
       display: flex;
+      flex-wrap: wrap;          /* narrow tiles: buttons drop under the label */
       align-items: center;
       gap: 0.25rem;
       padding: 0.35rem 0.5rem;
