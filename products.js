@@ -330,7 +330,7 @@ const PRODUCTS = [
   {
     "id": "wildflower-earrings",
     "name": "Wildflower Earrings",
-    "price": "R199.00",
+    "price": "R189.00",
     "category": "earrings",
     "desc": "Sculptural golden flowers with delicate turquoise accents and luminous imitation pearl centres. A playful statement pair that brings a little floral charm and vintage-inspired elegance to any outfit.\n\nDetails: Stainless steel • 18K gold plated • Turquoise accents • Imitation pearls • Waterproof • Hypoallergenic",
     "images": [
