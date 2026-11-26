@@ -48,7 +48,7 @@ const PRODUCTS = [
   {
     "id": "milky-way-bracelet",
     "name": "Milky Way Bracelet",
-    "price": "R259.00",
+    "price": "R239.00",
     "category": "bracelets",
     "desc": "Clarity • Calm • Harmony • Spiritual Connection\n\nThis delicate double-chain bracelet features soft, milky white quartz beads interspersed with tiny golden accents. White Quartz is traditionally associated with clarity, balance and positive energy, making this an effortlessly elegant piece with a touch of celestial charm.\n\nDetails: White Quartz • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
     "images": [
