@@ -188,6 +188,17 @@ const PRODUCTS = [
     ]
   },
   {
+    "id": "everyday-huggies",
+    "name": "Everyday Huggies",
+    "price": "R149.00",
+    "category": "earrings",
+    "desc": "Small, sleek and effortlessly stylish, these polished gold huggies are made for everyday wear. Their smooth, rounded shape adds a subtle touch of shine, making them perfect on their own or paired with your favourite ear stack.\n\nDetails: Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "images": [
+      "/images/products/everyday-huggies-1.jpg",
+      "/images/products/everyday-huggies-2.jpg"
+    ]
+  },
+  {
     "id": "eye-candy-hoops",
     "name": "Eye Candy Hoops",
     "price": "R259.00",
@@ -314,17 +325,6 @@ const PRODUCTS = [
       "/images/products/sunset-sorbet-hoops-1.jpg",
       "/images/products/sunset-sorbet-hoops-2.jpg",
       "/images/products/sunset-sorbet-hoops-3.jpg"
-    ]
-  },
-  {
-    "id": "everyday-huggies",
-    "name": "The Everyday Huggies",
-    "price": "R219.00",
-    "category": "earrings",
-    "desc": "Small, sleek and effortlessly stylish, these polished gold huggies are made for everyday wear. Their smooth, rounded shape adds a subtle touch of shine, making them perfect on their own or paired with your favourite ear stack.\n\nDetails: Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
-    "images": [
-      "/images/products/everyday-huggies-1.jpg",
-      "/images/products/everyday-huggies-2.jpg"
     ]
   },
   {
