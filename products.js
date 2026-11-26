@@ -308,7 +308,7 @@ const PRODUCTS = [
   {
     "id": "classic-hoops",
     "name": "The Classic Hoops",
-    "price": "R219.00",
+    "price": "R149.00",
     "category": "earrings",
     "desc": "Bold, rounded gold hoops with a smooth, glossy finish. An effortless everyday staple that adds a little golden glow to any outfit.\n\nDetails: Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
     "images": [
