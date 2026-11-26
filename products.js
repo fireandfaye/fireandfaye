@@ -632,7 +632,7 @@ const PRODUCTS = [
   {
     "id": "woodland-spirit-necklace",
     "name": "Woodland Spirit Necklace",
-    "price": "R279.00",
+    "price": "R269.00",
     "category": "necklaces",
     "desc": "Smoky Quartz • Grounding • Inner Strength\n\nNatural Smoky Quartz beads frame a delicate gold-toned antler pendant, creating an earthy piece inspired by the quiet magic of the woodland. Smoky Quartz is traditionally associated with grounding and inner strength.\n\nDetails: Smoky Quartz • 18K gold plated stainless steel • Waterproof • Hypoallergenic",
     "images": [
