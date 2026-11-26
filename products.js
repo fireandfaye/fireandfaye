@@ -578,8 +578,7 @@ const PRODUCTS = [
       "/images/products/stardust-prism-necklace-1.jpg",
       "/images/products/stardust-prism-necklace-2.jpg",
       "/images/products/stardust-prism-necklace-3.jpg",
-      "/images/products/stardust-prism-necklace-4.jpg",
-      "/images/products/stardust-prism-necklace-5.jpg"
+      "/images/products/stardust-prism-necklace-4.jpg"
     ]
   },
   {
