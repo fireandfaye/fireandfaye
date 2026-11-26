@@ -168,7 +168,7 @@ const PRODUCTS = [
   {
     "id": "enchanted-charm-huggies",
     "name": "Enchanted Charm Huggies",
-    "price": "R279.00",
+    "price": "R289.00",
     "category": "earrings",
     "desc": "Labradorite • Pearls • New Beginnings • Manifestation\n\nShimmering Labradorite, luminous freshwater pearls and delicate charms come together in these playful little huggies. A magical everyday piece for fresh starts and a touch of sparkle.\n\nDetails: Labradorite • Freshwater pearls • 18K gold plated stainless steel • Waterproof • Hypoallergenic",
     "images": [
