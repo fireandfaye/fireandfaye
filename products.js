@@ -318,7 +318,7 @@ const PRODUCTS = [
   {
     "id": "sunset-sorbet-hoops",
     "name": "Sunset Sorbet Hoops",
-    "price": "R299.00",
+    "price": "R289.00",
     "category": "earrings",
     "desc": "Joy • Confidence • Creativity • Vitality\n\nA playful mix of pink, orange and deep red gemstones, wrapped around delicate gold hoops. Featuring Pink Quartz, Orange Aventurine and Garnet, these colourful statement earrings bring a warm, sunset-inspired pop of colour to any outfit.\n\nDetails: Pink Quartz • Orange Aventurine • Garnet • 18K gold-plated stainless steel • Tarnish-proof • Hypoallergenic • Waterproof",
     "images": [
