@@ -119,7 +119,7 @@ const PRODUCTS = [
   {
     "id": "touch-of-turquoise-bracelet",
     "name": "Touch of Turquoise Bracelet",
-    "price": "R259.00",
+    "price": "R229.00",
     "category": "bracelets",
     "desc": "Protection • Good Fortune • Wisdom • Communication\n\nA delicate gold bracelet featuring vibrant turquoise stones, beautifully paired with sparkling cut-glass accents and fine dangling details. Turquoise has long been treasured across cultures and is traditionally associated with protection, courage, good fortune and clear communication. A lovely combination of colour, sparkle and timeless elegance.\n\nDetails: Turquoise • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
     "images": [
