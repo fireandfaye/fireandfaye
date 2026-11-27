@@ -5,7 +5,7 @@ const PRODUCTS = [
     "name": "Atlantis Bracelet",
     "price": "R249.00",
     "category": "bracelets",
-    "desc": "Truth • Communication • Emotional Balance • Harmony\n\nFeaturing soft aqua Amazonite stones and layered gold chains, the Atlantis Bracelet brings together ocean-inspired colour and delicate golden details. Amazonite is traditionally associated with honest self-expression, soothing emotional tension and finding balance between the heart and mind.\n\nDetails: Amazonite • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
+    "desc": "Truth • Communication • Emotional Balance • Harmony\n\nFeaturing soft aqua Amazonite stones and layered gold chains, the Atlantis Bracelet brings together ocean-inspired colour and delicate golden details. Amazonite is traditionally associated with honest self-expression, soothing emotional tension and finding balance between the heart and mind. \n\nDetails: Amazonite • Stainless steel • 18K gold plated • Waterproof • Hypoallergenic",
     "images": [
       "/images/products/atlantis-bracelet-1.jpg",
       "/images/products/atlantis-bracelet-2.jpg"
