@@ -139,6 +139,15 @@
     const CHECKOUT_ENDPOINT = 'https://fireandfaye-yoco-backend.vercel.app/api/create-yoco-checkout';
     const CONFIRM_ENDPOINT  = 'https://fireandfaye-yoco-backend.vercel.app/api/confirm-order';
     const PENDING_KEY = 'ff-pending-checkout';
+    // When that id was saved. A separate key, so the id's own format is unchanged.
+    const PENDING_AT_KEY = 'ff-pending-checkout-at';
+    // After this an id still stored is dropped unasked: by then the backend's
+    // own pass over unpaid orders has settled it.
+    const PENDING_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+    // Waits between asking "was it paid?" again: eight tries over two minutes.
+    const CONFIRM_RETRY_MS = [2000, 4000, 8000, 15000, 30000, 30000, 30000];
+    // Our own reference for a checkout, carried on the return URL from Yoco.
+    const CHECKOUT_REF = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     // Shipping fee. Keep in step with SHIPPING_CENTS and FREE_SHIPPING_MIN_CENTS
     // in the backend's products.js: these are only what the customer is shown,
     // the backend's values are what gets charged. One flat fee anywhere in SA;
@@ -601,7 +610,7 @@
           });
           showCartError('Our prices have just changed. Please review your order and try again.');
           // Close the checkout that was just made, so its pieces are not held.
-          cancelCheckout(data.orderId);
+          cancelCheckout({ checkoutId: data.orderId });
           // Repricing the cart from the data we have would only show the old
           // figures again; a reload picks up whichever version is now live.
           setTimeout(() => window.location.reload(), 2500);
@@ -615,7 +624,10 @@
         // apex, so an id stored only in localStorage on www.fireandfaye.co.za
         // would be invisible on the way back — different origin, different
         // storage. The cookie is readable from both.
-        try { localStorage.setItem(PENDING_KEY, data.orderId || ''); } catch (e) {}
+        try {
+          localStorage.setItem(PENDING_KEY, data.orderId || '');
+          localStorage.setItem(PENDING_AT_KEY, String(Date.now()));
+        } catch (e) {}
         try {
           document.cookie = PENDING_KEY + '=' + encodeURIComponent(data.orderId || '') +
             ';path=/;max-age=3600;domain=.fireandfaye.co.za;SameSite=Lax';
@@ -641,21 +653,39 @@
     }
 
     (function handlePaymentReturn() {
-      const status = new URLSearchParams(window.location.search).get('payment');
-      if (!status) return;
+      const params = new URLSearchParams(window.location.search);
+      const status = params.get('payment');
+
+      if (!status) {
+        // An ordinary page load. If an earlier return never got an answer
+        // (connection dropped, payment still going through), ask once more.
+        const checkoutId = readPendingCheckout();
+        if (checkoutId) confirmPayment({ checkoutId }, { quiet: true });
+        return;
+      }
+
+      // Two ways to know which checkout this is. The reference in the URL
+      // works in any browser, including one the bank's app opened. The id
+      // stored before leaving for Yoco only exists in the browser that
+      // started the checkout, and is the fallback.
+      const ref = params.get('ref');
+      const ids = {
+        ref: ref && CHECKOUT_REF.test(ref) ? ref : null,
+        checkoutId: readPendingCheckout(),
+      };
 
       if (status === 'success') {
         cart = [];
         saveCart();
         renderCart();
         showPayBanner('Thank you &mdash; your payment went through. A confirmation is on its way, and we&rsquo;ll be in touch about delivery.', false);
-        confirmPayment();
+        confirmPayment(ids);
       } else if (status === 'cancelled') {
         showPayBanner('Payment cancelled. Your cart has been kept, so you can pick up where you left off.', true);
-        cancelCheckout(takePendingCheckout());
+        cancelCheckout(ids);
       } else if (status === 'failed') {
         showPayBanner('That payment didn&rsquo;t go through. Your cart has been kept &mdash; please try again, or email us if it keeps failing.', true);
-        cancelCheckout(takePendingCheckout());
+        cancelCheckout(ids);
       }
 
       // Don't leave ?payment= in the URL to be re-triggered on refresh.
@@ -664,46 +694,123 @@
 
     // ── Confirming the payment ─────────────────────
     // The ?payment=success in the URL proves nothing on its own — anyone can
-    // type it. This hands the checkout id to the backend, which asks Yoco
+    // type it. This hands the checkout to the backend, which asks Yoco
     // directly whether it was really paid before anything is emailed.
-    // The checkout id saved before going to Yoco, removed as it is read.
-    // Clearing first means a refresh of the return page cannot act twice
-    // (a second set of confirmation emails, or a second cancel).
-    function takePendingCheckout() {
+    //
+    // The stored checkout id is kept until the backend gives a definite
+    // answer (paid, or closed without payment). It used to be removed before
+    // asking, so one failed request meant the order was never confirmed.
+    // Asking twice is safe: the backend sends the confirmations once only.
+    function readPendingCheckout() {
       let checkoutId = null;
-      try { checkoutId = localStorage.getItem(PENDING_KEY); } catch (e) {}
+      let savedAt = 0;
+      try {
+        checkoutId = localStorage.getItem(PENDING_KEY);
+        savedAt = Number(localStorage.getItem(PENDING_AT_KEY)) || 0;
+      } catch (e) {}
+      if (checkoutId && savedAt && Date.now() - savedAt > PENDING_MAX_AGE_MS) {
+        clearPendingCheckout();
+        return null;
+      }
       if (!checkoutId) {
+        // The cookie expires by itself after an hour.
         const m = document.cookie.match(new RegExp('(?:^|; )' + PENDING_KEY + '=([^;]*)'));
         if (m) checkoutId = decodeURIComponent(m[1]);
       }
-      try { localStorage.removeItem(PENDING_KEY); } catch (e) {}
+      return checkoutId || null;
+    }
+
+    function clearPendingCheckout() {
+      try {
+        localStorage.removeItem(PENDING_KEY);
+        localStorage.removeItem(PENDING_AT_KEY);
+      } catch (e) {}
       try { document.cookie = PENDING_KEY + '=;path=/;max-age=0;domain=.fireandfaye.co.za'; } catch (e) {}
-      return checkoutId;
     }
 
-    // Not paying after all: the backend closes the Yoco page and gives the
-    // held pieces back, rather than leaving them held for the full hour.
-    function cancelCheckout(checkoutId) {
-      if (!checkoutId) return;
-      fetch(CONFIRM_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkoutId, action: 'cancel' }),
-      }).catch(err => console.error('Could not cancel the checkout:', err));
+    // One question to the backend about one checkout. Asks by the reference
+    // from the URL when there is one; if the backend cannot place it (the
+    // order was never recorded, or the database is down) and this browser
+    // holds the Yoco id, asks again with that.
+    // Resolves to { ok, status, data }. Rejects only if the network fails.
+    async function askBackend(ids, action) {
+      const send = async (body) => {
+        const r = await fetch(CONFIRM_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(action ? { ...body, action } : body),
+        });
+        const data = await r.json().catch(() => ({}));
+        return { ok: r.ok, status: r.status, data };
+      };
+      if (ids.ref) {
+        const byRef = await send({ ref: ids.ref });
+        const notPlaced = byRef.status === 503 || (byRef.ok && byRef.data.found === false);
+        if (!notPlaced || !ids.checkoutId) return byRef;
+      }
+      return send({ checkoutId: ids.checkoutId });
     }
 
-    function confirmPayment() {
-      const checkoutId = takePendingCheckout();
-      if (!checkoutId) return;
+    // Not paying after all: the backend closes the Yoco page, gives the held
+    // pieces back and marks the order cancelled, rather than leaving them
+    // held for the full hour.
+    function cancelCheckout(ids) {
+      if (!ids || (!ids.ref && !ids.checkoutId)) return;
+      askBackend(ids, 'cancel')
+        .then((a) => {
+          if (!a.ok) return;                       // no answer: keep the id
+          if (a.data.reason === 'paid') {
+            // Came back as cancelled or failed, but Yoco says it was paid
+            // (a second attempt went through). Confirm it instead.
+            confirmPayment(ids, { quiet: true });
+            return;
+          }
+          clearPendingCheckout();
+        })
+        .catch(err => console.error('Could not cancel the checkout:', err));
+    }
 
-      fetch(CONFIRM_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkoutId }),
-      })
-        .then(r => r.json())
-        .then(d => console.log('Payment confirmation:', d))
-        .catch(err => console.error('Could not confirm payment:', err));
+    // quiet: not on the return from Yoco, so nothing has been shown yet. Asks
+    // once, and only if it turns out to be paid says so and empties the cart.
+    function confirmPayment(ids, options, attempt) {
+      if (!ids || (!ids.ref && !ids.checkoutId)) return;
+      const quiet = Boolean(options && options.quiet);
+      const n = attempt || 0;
+
+      const again = () => {
+        // Out of tries: the id stays stored, so the next page load asks
+        // again, and the backend's own pass confirms the order regardless.
+        if (quiet || n >= CONFIRM_RETRY_MS.length) return;
+        setTimeout(() => confirmPayment(ids, options, n + 1), CONFIRM_RETRY_MS[n]);
+      };
+
+      askBackend(ids)
+        .then((a) => {
+          const d = a.data || {};
+          console.log('Payment confirmation:', d);
+
+          if (a.ok && d.paid) {
+            clearPendingCheckout();
+            if (quiet) {
+              cart = [];
+              saveCart();
+              renderCart();
+              showPayBanner('Thank you &mdash; your payment went through. A confirmation is on its way, and we&rsquo;ll be in touch about delivery.', false);
+            }
+            return;
+          }
+          // Definitely not paid, or not a checkout the backend knows: stop.
+          if ((a.ok && (d.status === 'expired' || d.found === false)) || a.status === 400) {
+            clearPendingCheckout();
+            return;
+          }
+          // Still in progress at Yoco, or the backend could not check.
+          again();
+        })
+        .catch((err) => {
+          console.error('Could not confirm payment:', err);
+          again();
+        });
     }
 
     // ── Prefill the cart from a signed-in customer's profile ──
