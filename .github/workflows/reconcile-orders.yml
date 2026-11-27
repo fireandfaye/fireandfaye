@@ -1,0 +1,40 @@
+name: Check for paid orders nobody confirmed
+
+# A customer who pays and never returns to the site is confirmed by the
+# backend's own pass over pending orders (api/reconcile-orders.js in the
+# backend repo). This calls it every 15 minutes. GitHub can start a scheduled
+# run late, sometimes by 10 to 30 minutes; nothing is lost, the next run
+# picks up whatever is still pending.
+#
+# In this repo, not the backend's: Actions minutes are free on a public repo,
+# and 96 runs a day would use up a private repo's monthly allowance.
+#
+# A failed run emails the repo owner. That is the alert that the pass has
+# stopped.
+on:
+  schedule:
+    # Off the hour and the quarters, when GitHub's queue is shortest.
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+# Reads nothing from the repo and writes nothing to it.
+permissions: {}
+
+concurrency:
+  group: reconcile-orders
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ask the backend to check pending orders
+        env:
+          # The same value as CRON_SECRET in the backend's Vercel project.
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 90 \
+            --retry 2 --retry-delay 20 \
+            -X POST -H "Authorization: Bearer $CRON_SECRET" \
+            https://fireandfaye-yoco-backend.vercel.app/api/reconcile-orders
