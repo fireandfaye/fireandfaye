@@ -427,7 +427,7 @@ def account_page(nav, footer):
 
     <section class="account-card" id="acc-step-code" hidden>
       <h2 class="account-heading">Check your email</h2>
-      <p class="account-lead">We&rsquo;ve sent a six-digit code to <strong id="acc-sent-to"></strong>. It expires in 60 minutes.</p>
+      <p class="account-lead">We&rsquo;ve sent a six-digit code to <strong id="acc-sent-to"></strong>. It expires in 10 minutes.</p>
       <div class="cart-field">
         <label for="acc-code">Six-digit code</label>
         <input type="text" id="acc-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="000000" />
@@ -522,7 +522,7 @@ def admin_page(nav, footer):
 
     <section class="account-card" id="adm-step-code" hidden>
       <h2 class="account-heading">Check your email</h2>
-      <p class="account-lead">We&rsquo;ve sent a six-digit code to <strong id="adm-sent-to"></strong>. It expires in 60 minutes.</p>
+      <p class="account-lead">We&rsquo;ve sent a six-digit code to <strong id="adm-sent-to"></strong>. It expires in 10 minutes.</p>
       <div class="cart-field">
         <label for="adm-code">Six-digit code</label>
         <input type="text" id="adm-code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" />
