@@ -216,8 +216,9 @@ if (accountRoot) {
   sendBtn.addEventListener('click', sendCode);
   verifyBtn.addEventListener('click', verifyCode);
   backBtn.addEventListener('click', () => { showError(''); show('email'); });
-  signOutBtn.addEventListener('click', () => {
-    clear();
+  signOutBtn.addEventListener('click', async () => {
+    signOutBtn.disabled = true;
+    await signOut();
     showError('');
     // Confirm before leaving, so it is clear something happened rather than
     // the page simply changing underneath them.

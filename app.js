@@ -112,6 +112,33 @@
       return next;
     }
 
+    // Sign-out ends the session on Supabase too, not only in this browser.
+    // Clearing localStorage alone leaves the refresh token working for anyone
+    // who copied it. An access token over an hour old is refused, so renew it
+    // once and try again. Whatever happens, this browser ends up signed out:
+    // offline, or a session already ended, leaves nothing more to do here.
+    // scope=local ends only this sign-in: signing out on a phone leaves the
+    // same person's laptop signed in.
+    async function signOut() {
+      const s = loadSession();
+      const logout = (token) => fetch(`${SUPABASE_URL}/auth/v1/logout?scope=local`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+      });
+      try {
+        if (s && s.access_token) {
+          const r = await logout(s.access_token);
+          if ((r.status === 401 || r.status === 403) && s.refresh_token) {
+            await logout((await refreshSession(s)).access_token);
+          }
+        }
+      } catch (e) {
+        console.warn('Sign-out could not reach Supabase:', e);
+      } finally {
+        clearSession();
+      }
+    }
+
     // One retry after refreshing. The retry cannot itself retry, or a
     // persistently rejecting endpoint would recurse forever.
     async function supaApi(session, path, opts = {}, allowRetry = true) {

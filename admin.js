@@ -639,8 +639,9 @@ if (adminRoot) {
   sendBtn.addEventListener('click', sendCode);
   verifyBtn.addEventListener('click', verifyCode);
   backBtn.addEventListener('click', () => { showError(''); show('email'); });
-  signOutBtn.addEventListener('click', () => {
-    clearSession();
+  signOutBtn.addEventListener('click', async () => {
+    signOutBtn.disabled = true;
+    await signOut();
     showError('');
     showNotice('You’ve been signed out.');
     setTimeout(() => { window.location.href = '/'; }, 1200);
