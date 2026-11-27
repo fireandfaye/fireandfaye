@@ -126,7 +126,15 @@ def crumbs(trail):
         ],
     }
     return (f'  <nav class="breadcrumb" aria-label="Breadcrumb">{inner}</nav>\n'
-            f'  <script type="application/ld+json">{json.dumps(ld)}</script>\n')
+            f'  <script type="application/ld+json">{ld_json(ld)}</script>\n')
+
+
+def ld_json(obj, **kw):
+    """JSON for a <script type="application/ld+json"> block. json.dumps leaves
+    "</" alone, so a product name or description containing "</script>" would
+    end the script tag early and the rest would be read as HTML. "<\\/" is the
+    same string to any JSON parser."""
+    return json.dumps(obj, **kw).replace('</', '<\\/')
 
 
 def jpeg_size(path):
@@ -204,7 +212,7 @@ def product_page(p, nav, footer):
             },
         },
     }
-    extra = f'  <script type="application/ld+json">\n{json.dumps(ld, indent=2, ensure_ascii=False)}\n  </script>\n'
+    extra = f'  <script type="application/ld+json">\n{ld_json(ld, indent=2, ensure_ascii=False)}\n  </script>\n'
 
     arrows = ""
     if len(p["images"]) > 1:
@@ -287,7 +295,7 @@ def category_page(slug, products, nav, footer):
                 ],
             },
         }
-        extra = f'  <script type="application/ld+json">\n{json.dumps(ld, indent=2, ensure_ascii=False)}\n  </script>\n'
+        extra = f'  <script type="application/ld+json">\n{ld_json(ld, indent=2, ensure_ascii=False)}\n  </script>\n'
 
     og = SITE + (products[0]["images"][0] if products else "/og-image.jpg")
 

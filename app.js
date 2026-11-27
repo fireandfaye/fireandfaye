@@ -1,6 +1,13 @@
 // Shared across every page: cart, checkout, delivery address, nav.
 // Loads after products.js, which defines PRODUCTS.
 
+// Product text comes from the admin page, so it is escaped before it goes into
+// innerHTML. Global on purpose: home.js loads after this file and uses it too.
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
     // ── Scroll reveal ────────────────────────────
     const observer = new IntersectionObserver(entries => {
       entries.forEach(e => {
@@ -289,11 +296,11 @@
         const row = document.createElement('div');
         row.className = 'cart-line';
         row.innerHTML = `
-          <a class="cart-thumb-link" href="/${p.category}/${p.id}/" aria-label="${p.name}">
-            <img class="cart-thumb" src="${p.images[0]}" alt="" />
+          <a class="cart-thumb-link" href="/${p.category}/${p.id}/" aria-label="${escapeHtml(p.name)}">
+            <img class="cart-thumb" src="${escapeHtml(p.images[0])}" alt="" />
           </a>
           <div>
-            <a class="cart-line-name" href="/${p.category}/${p.id}/">${p.name}</a>
+            <a class="cart-line-name" href="/${p.category}/${p.id}/">${escapeHtml(p.name)}</a>
             <div class="cart-line-price">${p.price} each</div>
             ${cartStockNote(line)}
             <div class="qty">

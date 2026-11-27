@@ -51,10 +51,10 @@
         card.setAttribute('data-category', p.category);
         card.innerHTML = `
           <div class="card-photo-wrap">
-            <img class="card-photo" src="${p.images[0]}" alt="${p.name}" width="700" height="933" loading="lazy" decoding="async" />
+            <img class="card-photo" src="${escapeHtml(p.images[0])}" alt="${escapeHtml(p.name)}" width="700" height="933" loading="lazy" decoding="async" />
           </div>
           <div class="card-info">
-            <div class="card-name">${p.name}</div>
+            <div class="card-name">${escapeHtml(p.name)}</div>
             <div class="card-price">${p.price}</div>
             <div class="card-view-hint">View Details</div>
           </div>

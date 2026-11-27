@@ -44,6 +44,31 @@ BACKEND = os.environ.get(
     os.path.join(HERE, '..', 'fireandfaye-yoco-backend', 'products.js'))
 BUCKET  = 'product-photos'
 
+# Every path below comes from the database, and this script runs with the
+# service key in its environment and commits what it writes to a PUBLIC repo.
+# A path like "../../proc/self/environ" stored as a photo would publish the
+# secrets as a product image. So each one must match its exact shape, and the
+# file it resolves to must sit inside images/products. Any miss stops the run
+# before anything is written. The same shapes are check constraints on
+# product_images (docs/supabase-image-path-checks.sql in the backend repo).
+SLUG_RE      = re.compile(r'[a-z0-9]+(-[a-z0-9]+)*')
+PUBLISHED_RE = re.compile(r'/images/products/[a-z0-9]+(-[a-z0-9]+)*\.jpg')
+STORAGE_RE   = re.compile(r'[a-z0-9]+(-[a-z0-9]+)*/[0-9]+(-[0-9]+)?\.jpg')
+
+
+def refuse(what, value):
+    sys.exit(f'refusing to publish: {what} {value!r} is not an allowed shape')
+
+
+def image_file(rel):
+    """The local file for a site path, guaranteed to be inside images/products."""
+    root = os.path.realpath(IMAGES)
+    path = os.path.realpath(os.path.join(HERE, rel.lstrip('/')))
+    if os.path.dirname(path) != root:
+        refuse('image path', rel)
+    return path
+
+
 URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
 KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
 if not URL or not KEY:
@@ -78,6 +103,20 @@ def main():
     listed = [p for p in products if p.get('is_listed')]
     print(f'{len(products)} products in the database, {len(listed)} listed')
 
+    # The slug names the image files and is written into the backend's source
+    # code, so it is checked for every product, listed or not.
+    for p in products:
+        if not SLUG_RE.fullmatch(p['id']):
+            refuse('product id', p['id'])
+        for img in p.get('product_images') or []:
+            sp, pp = img.get('storage_path'), img.get('published_path')
+            if sp and not (STORAGE_RE.fullmatch(sp) and sp.startswith(p['id'] + '/')):
+                refuse('storage_path', sp)
+            if pp and not PUBLISHED_RE.fullmatch(pp):
+                refuse('published_path', pp)
+            if pp:
+                image_file(pp)
+
     os.makedirs(IMAGES, exist_ok=True)
     out, fetched, published = [], 0, []
 
@@ -104,7 +143,7 @@ def main():
                 payloads.append((img['id'], rel, fetch_object(img['storage_path'])))
                 fetched += 1
             elif img.get('published_path') and img['published_path'] != rel:
-                src = os.path.join(HERE, img['published_path'].lstrip('/'))
+                src = image_file(img['published_path'])
                 payloads.append((img['id'], rel,
                                  open(src, 'rb').read() if os.path.exists(src) else None))
             else:
@@ -117,7 +156,7 @@ def main():
             if data is None:
                 print(f'  ! {p["name"]}: {rel} had no source file — left as it was')
                 continue
-            open(os.path.join(HERE, rel.lstrip('/')), 'wb').write(data)
+            open(image_file(rel), 'wb').write(data)
             published.append((image_id, rel))
 
         # Photos removed in the admin leave files behind at positions that no
