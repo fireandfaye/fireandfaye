@@ -119,7 +119,7 @@ function escapeHtml(s) {
     // enquiry) and in Supabase Auth's CAPTCHA setting (checked on sign-in).
     // A page opts in with <div class="turnstile-box" id="..." data-turnstile="action">.
     // The widget only shows itself if Cloudflare wants the visitor to click.
-    const TURNSTILE_SITE_KEY = '__TURNSTILE_SITE_KEY__';
+    const TURNSTILE_SITE_KEY = '0x4AAAAAAGXDGHRFunvz5st4';
     const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad';
     const TURNSTILE_WAIT_MS = 20000;
     const TURNSTILE_MISSING = "We couldn't run the security check. Please wait a moment and try again. If you use an ad or script blocker, allow challenges.cloudflare.com for this site.";
