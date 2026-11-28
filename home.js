@@ -133,13 +133,18 @@
       btn.textContent = 'Sending…';
       note.textContent = '';
 
+      const turnstile = await turnstileToken('ts-enquiry');
+      if (!turnstile) return fail(TURNSTILE_MISSING);
+
       try {
         const res = await fetch(ENQUIRY_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, message, website }),
+          body: JSON.stringify({ name, email, message, website, turnstileToken: turnstile }),
         });
         const data = await res.json().catch(() => ({}));
+        // A token works once, so get a fresh one for any next message.
+        resetTurnstile('ts-enquiry');
 
         if (!res.ok) return fail(data.error || 'We could not send that. Please try again.');
 
@@ -161,6 +166,7 @@
         }, 6000);
       } catch (err) {
         console.error('Enquiry failed:', err);
+        resetTurnstile('ts-enquiry');
         fail('We could not reach the server. Please check your connection, or email us directly.');
       }
     }

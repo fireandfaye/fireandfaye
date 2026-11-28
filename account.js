@@ -182,14 +182,23 @@ if (accountRoot) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Please enter a valid email address.'); return; }
     showError('');
     sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+    const captcha = await turnstileToken('ts-account');
+    if (!captcha) {
+      showError(TURNSTILE_MISSING);
+      sendBtn.disabled = false; sendBtn.textContent = 'Email me a code';
+      return;
+    }
     try {
-      await auth('otp', { email, create_user: true });
+      await auth('otp', { email, create_user: true, gotrue_meta_security: { captcha_token: captcha } });
       pendingEmail = email;
       sentToEl.textContent = email;
       show('code');
       codeInput.focus();
     } catch (err) { showError(err.message); }
-    finally { sendBtn.disabled = false; sendBtn.textContent = 'Email me a code'; }
+    finally {
+      resetTurnstile('ts-account');   // used once, whatever Supabase answered
+      sendBtn.disabled = false; sendBtn.textContent = 'Email me a code';
+    }
   }
 
   async function verifyCode() {

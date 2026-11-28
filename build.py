@@ -391,6 +391,7 @@ def cart_page(nav, footer):
         <div class="cart-total-row"><span>Subtotal</span><span id="cart-subtotal">R0.00</span></div>
         <div class="cart-total-row"><span>Shipping</span><span id="cart-shipping">R0.00</span></div>
         <div class="cart-total-row grand"><span>Total</span><span id="cart-total">R0.00</span></div>
+        <div class="turnstile-box" id="ts-checkout" data-turnstile="checkout"></div>
         <button class="cart-pay" id="cart-pay" type="button">Pay with Yoco</button>
         <p class="cart-error" id="cart-error" hidden></p>
         <p class="cart-secure-note">Card details are entered on Yoco&rsquo;s secure payment page, never on this site.</p>
@@ -429,6 +430,7 @@ def account_page(nav, footer):
         <label for="acc-email">Email</label>
         <input type="email" id="acc-email" autocomplete="email" placeholder="you@email.com" />
       </div>
+      <div class="turnstile-box" id="ts-account" data-turnstile="account-sign-in"></div>
       <button class="btn-primary account-btn" id="acc-send" type="button">Email me a code</button>
       <p class="account-muted">Orders you placed as a guest will appear here too, as long as you use the same email address.</p>
     </section>
@@ -525,6 +527,7 @@ def admin_page(nav, footer):
         <label for="adm-email">Email address</label>
         <input type="email" id="adm-email" autocomplete="email" placeholder="you@example.com" />
       </div>
+      <div class="turnstile-box" id="ts-admin" data-turnstile="admin-sign-in"></div>
       <button class="btn-primary account-btn" id="adm-send" type="button">Email me a code</button>
     </section>
 

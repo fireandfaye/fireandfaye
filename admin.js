@@ -607,15 +607,24 @@ if (adminRoot) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Please enter a valid email address.'); return; }
     showError('');
     sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+    const captcha = await turnstileToken('ts-admin');
+    if (!captcha) {
+      showError(TURNSTILE_MISSING);
+      sendBtn.disabled = false; sendBtn.textContent = 'Email me a code';
+      return;
+    }
     try {
       // create_user false: the admin page is not a place to make new accounts.
-      await supaAuth('otp', { email, create_user: false });
+      await supaAuth('otp', { email, create_user: false, gotrue_meta_security: { captcha_token: captcha } });
       pendingEmail = email;
       sentToEl.textContent = email;
       show('code');
       codeInput.focus();
     } catch (err) { showError(err.message); }
-    finally { sendBtn.disabled = false; sendBtn.textContent = 'Email me a code'; }
+    finally {
+      resetTurnstile('ts-admin');   // used once, whatever Supabase answered
+      sendBtn.disabled = false; sendBtn.textContent = 'Email me a code';
+    }
   }
 
   async function verifyCode() {

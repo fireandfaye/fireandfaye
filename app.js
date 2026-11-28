@@ -111,6 +111,74 @@ function escapeHtml(s) {
       return data;
     }
 
+    // ── Cloudflare Turnstile (security session 11) ──
+    // A bot check on the four public forms: checkout, enquiry, and "Email me a
+    // code" on /account/ and /admin/. A per-IP rate limit cannot stop a script
+    // spread over many addresses; this can. The site key is public. Its secret
+    // is in Vercel (TURNSTILE_SECRET_KEY, checked by create-yoco-checkout and
+    // enquiry) and in Supabase Auth's CAPTCHA setting (checked on sign-in).
+    // A page opts in with <div class="turnstile-box" id="..." data-turnstile="action">.
+    // The widget only shows itself if Cloudflare wants the visitor to click.
+    const TURNSTILE_SITE_KEY = '__TURNSTILE_SITE_KEY__';
+    const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad';
+    const TURNSTILE_WAIT_MS = 20000;
+    const TURNSTILE_MISSING = "We couldn't run the security check. Please wait a moment and try again. If you use an ad or script blocker, allow challenges.cloudflare.com for this site.";
+    const turnstileWidgets = {};   // box id -> Turnstile widget id
+    let turnstileLoading = null;
+
+    function loadTurnstile() {
+      if (!turnstileLoading) {
+        turnstileLoading = new Promise((resolve, reject) => {
+          window.onTurnstileLoad = () => resolve(window.turnstile);
+          const s = document.createElement('script');
+          s.src = TURNSTILE_SCRIPT;
+          s.async = true;
+          s.onerror = () => reject(new Error('Turnstile did not load'));
+          document.head.appendChild(s);
+        });
+        turnstileLoading.catch((err) => console.error(err.message));
+      }
+      return turnstileLoading;
+    }
+
+    function mountTurnstile() {
+      const boxes = document.querySelectorAll('[data-turnstile]');
+      if (!boxes.length) return;
+      loadTurnstile().then((ts) => {
+        boxes.forEach((box) => {
+          turnstileWidgets[box.id] = ts.render(box, {
+            sitekey: TURNSTILE_SITE_KEY,
+            action: box.dataset.turnstile,
+            appearance: 'interaction-only',
+            theme: 'light',
+            size: 'flexible',
+          });
+        });
+      }).catch(() => {});
+    }
+
+    // The token for one box, or '' if there is none in time (script blocked,
+    // or a challenge not passed). Each token works once: call resetTurnstile
+    // after every attempt that sent it, whatever the answer.
+    async function turnstileToken(boxId) {
+      try { await loadTurnstile(); } catch (e) { return ''; }
+      const id = turnstileWidgets[boxId];
+      if (id === undefined) return '';
+      for (let waited = 0; waited < TURNSTILE_WAIT_MS; waited += 250) {
+        const token = window.turnstile.getResponse(id);
+        if (token) return token;
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      return '';
+    }
+
+    function resetTurnstile(boxId) {
+      const id = turnstileWidgets[boxId];
+      if (window.turnstile && id !== undefined) window.turnstile.reset(id);
+    }
+
+    mountTurnstile();
+
     async function refreshSession(s) {
       const d = await supaAuth('token?grant_type=refresh_token', { refresh_token: s.refresh_token });
       const next = { access_token: d.access_token, refresh_token: d.refresh_token,
@@ -597,6 +665,14 @@ function escapeHtml(s) {
       cartPayBtn.disabled = true;
       cartPayBtn.textContent = 'Taking you to Yoco…';
 
+      const turnstile = await turnstileToken('ts-checkout');
+      if (!turnstile) {
+        showCartError(TURNSTILE_MISSING);
+        cartPayBtn.disabled = false;
+        cartPayBtn.textContent = original;
+        return;
+      }
+
       try {
         const res = await fetch(CHECKOUT_ENDPOINT, {
           method: 'POST',
@@ -605,6 +681,7 @@ function escapeHtml(s) {
             items: cart.map(l => ({ productId: l.id, quantity: l.qty })),
             shippingMethod: shippingMethod(),
             customer,
+            turnstileToken: turnstile,
           }),
         });
 
@@ -618,6 +695,7 @@ function escapeHtml(s) {
             renderCart();
           }
           showCartError(data.error || 'We could not start the payment. Please try again.');
+          resetTurnstile('ts-checkout');
           cartPayBtn.disabled = false;
           cartPayBtn.textContent = original;
           return;
@@ -670,6 +748,7 @@ function escapeHtml(s) {
       } catch (err) {
         console.error('Checkout failed:', err);
         showCartError('We could not reach the payment service. Check your connection and try again.');
+        resetTurnstile('ts-checkout');
         cartPayBtn.disabled = false;
         cartPayBtn.textContent = original;
       }

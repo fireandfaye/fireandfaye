@@ -2404,3 +2404,7 @@
     .admin-new-btn { margin-left: auto; opacity: 1; animation: none; padding: 0.65rem 1.2rem;
                      border: none; cursor: pointer; }
     .admin-new-btn:hover { opacity: 0.88; }
+
+    /* Turnstile (security session 11). The widget only appears when Cloudflare
+       wants a click; a hidden one takes no space, a shown one gets a gap. */
+    .turnstile-box iframe { margin: 6px 0 14px; }
