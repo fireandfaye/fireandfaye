@@ -825,7 +825,12 @@ function escapeHtml(s) {
 
           if (a.ok && d.paid) {
             clearPendingCheckout();
-            if (quiet) {
+            // Only when this check is what confirmed the order. If it was
+            // confirmed earlier (in another tab or browser, or by the
+            // backend's own pass) the customer has their email already: a
+            // thank-you on an unrelated page load would be wrong, and the
+            // cart may by now hold something new.
+            if (quiet && !d.alreadyConfirmed) {
               cart = [];
               saveCart();
               renderCart();
